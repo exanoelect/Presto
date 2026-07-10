@@ -1,0 +1,35 @@
+<RCC>
+    <qresource prefix="/">
+        <file>prestologo.png</file>
+        <file>prestoled.png</file>
+        <file>clear.png</file>
+        <file>application-exit.png</file>
+        <file>connect.png</file>
+        <file>disconnect.png</file>
+        <file>settings.png</file>
+        <file>circle1.png</file>
+        <file>circle2.png</file>
+        <file>save2.png</file>
+        <file>down2.png</file>
+        <file>down1.png</file>
+        <file>up2.png</file>
+        <file>up1.png</file>
+        <file>mulai2.png</file>
+        <file>mulai1.png</file>
+        <file>arrowcircle2.png</file>
+        <file>arrowcircle1.png</file>
+        <file>stop2.png</file>
+        <file>stop1.png</file>
+        <file>save1.png</file>
+        <file>open2.png</file>
+        <file>open1.png</file>
+        <file>zero1.png</file>
+        <file>zero2.png</file>
+        <file>right2.png</file>
+        <file>right1.png</file>
+        <file>left1.png</file>
+        <file>left2.png</file>
+        <file>resume.png</file>
+        <file>stop.png</file>
+    </qresource>
+</RCC>
