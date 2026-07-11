@@ -133,6 +133,8 @@ private slots:
     void on_btnResume_clicked();
     void on_btnSave_clicked();
 
+    void on_btnExit_clicked();
+
 private:
     Ui::MainWindow *ui;
     QString demoName;

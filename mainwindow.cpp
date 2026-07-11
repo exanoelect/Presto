@@ -1171,6 +1171,21 @@ void MainWindow::on_btnRefreshSerialPort_clicked()
 
     //showPortInfo(1);
     fillPortsInfo();
+
+    ui->btnResume->setEnabled(false);
+    ui->btnStart->setEnabled(true);
+    ui->btnDown->setEnabled(false);
+    ui->btnUp->setEnabled(false);
+    ui->btnRefreshSerialPort->setEnabled(false);
+    ui->btnOpen->setEnabled(false);
+    ui->btnTera->setEnabled(false);
+    ui->btnResetEncoder->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->labelTargetBebanVal->setEnabled(false);
+    ui->btnSave->setEnabled(false);
+    ui->serialPortInfoListBox->setEnabled(true);
+    ui->btnStopFromRun->setEnabled(false);
+    ui->teNama->setEnabled(false);
 }
 
 /*****************************************************************************************************
@@ -1510,6 +1525,23 @@ void MainWindow::on_btnStart_clicked()
                             mperintahManual,
                             mperintahAuto,
                             mupdateData);
+
+                   //Disable all button, except StopFromRunning
+                   ui->btnResume->setEnabled(false);
+                   ui->btnStart->setEnabled(false);
+                   ui->btnDown->setEnabled(false);
+                   ui->btnUp->setEnabled(false);
+                   ui->btnRefreshSerialPort->setEnabled(false);
+                   ui->btnOpen->setEnabled(false);
+                   ui->btnTera->setEnabled(false);
+                   ui->btnResetEncoder->setEnabled(false);
+                   ui->btnTargetBebanRefresh->setEnabled(false);
+                   ui->labelTargetBebanVal->setEnabled(false);
+                   ui->btnSave->setEnabled(false);
+                   ui->serialPortInfoListBox->setEnabled(false);
+                   ui->btnStopFromRun->setEnabled(true);
+                   ui->teNama->setEnabled(false);
+
                });
            }
        }
@@ -1980,6 +2012,20 @@ void MainWindow::on_btnStopFromRun_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
+
+       ui->btnResume->setEnabled(true);
+       ui->btnStart->setEnabled(false);
+       ui->btnDown->setEnabled(false);
+       ui->btnUp->setEnabled(false);
+       ui->btnRefreshSerialPort->setEnabled(false);
+       ui->btnOpen->setEnabled(false);
+       ui->btnTera->setEnabled(false);
+       ui->btnResetEncoder->setEnabled(false);
+       ui->btnTargetBebanRefresh->setEnabled(false);
+       ui->labelTargetBebanVal->setEnabled(false);
+       ui->btnSave->setEnabled(false);
+       ui->serialPortInfoListBox->setEnabled(false);
+       ui->teNama->setEnabled(false);
     }
 }
 
@@ -2006,6 +2052,21 @@ void MainWindow::on_btnResume_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
+
+       ui->btnResume->setEnabled(false);
+       ui->btnStart->setEnabled(false);
+       ui->btnDown->setEnabled(false);
+       ui->btnUp->setEnabled(false);
+       ui->btnRefreshSerialPort->setEnabled(false);
+       ui->btnOpen->setEnabled(false);
+       ui->btnTera->setEnabled(false);
+       ui->btnResetEncoder->setEnabled(false);
+       ui->btnTargetBebanRefresh->setEnabled(false);
+       ui->labelTargetBebanVal->setEnabled(false);
+       ui->btnSave->setEnabled(false);
+       ui->serialPortInfoListBox->setEnabled(false);
+       ui->btnStopFromRun->setEnabled(true);
+       ui->teNama->setEnabled(false);
     }
 }
 
@@ -2081,4 +2142,14 @@ void MainWindow::on_btnSave_clicked()
     QMessageBox::information(this,
                              "Success",
                              "File succesfully saved");
+}
+
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::on_btnExit_clicked()
+{
+
 }

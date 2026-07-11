@@ -140,7 +140,7 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="../../presto/img/img.qrc">
+       <iconset resource="img/img.qrc">
         <normaloff>:/disconnect.png</normaloff>:/disconnect.png</iconset>
       </property>
       <property name="iconSize">
@@ -169,7 +169,7 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="../../presto/img/img.qrc">
+       <iconset resource="img/img.qrc">
         <normaloff>:/disconnect.png</normaloff>:/disconnect.png</iconset>
       </property>
       <property name="iconSize">
@@ -430,7 +430,7 @@ color: rgb(255, 250, 189);</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="../../presto/img/img.qrc">
+       <iconset resource="img/img.qrc">
         <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
       </property>
      </widget>
@@ -563,7 +563,7 @@ color: rgb(255, 250, 189);</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="../../presto/img/img.qrc">
+       <iconset resource="img/img.qrc">
         <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
       </property>
      </widget>
@@ -1024,7 +1024,7 @@ font: 48pt &quot;MS Shell Dlg 2&quot;;</string>
     <widget class="QLabel" name="labelCurrentClock">
      <property name="geometry">
       <rect>
-       <x>1570</x>
+       <x>1520</x>
        <y>40</y>
        <width>321</width>
        <height>71</height>
@@ -1044,8 +1044,8 @@ font: 36pt &quot;MS Shell Dlg 2&quot;;</string>
     <widget class="QLabel" name="labelCurrentDate">
      <property name="geometry">
       <rect>
-       <x>1520</x>
-       <y>0</y>
+       <x>1480</x>
+       <y>10</y>
        <width>371</width>
        <height>31</height>
       </rect>
@@ -1080,6 +1080,22 @@ color: black;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnExit">
+     <property name="geometry">
+      <rect>
+       <x>1850</x>
+       <y>0</y>
+       <width>51</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">border-image: url(:/application-exit.png);</string>
+     </property>
+     <property name="text">
+      <string/>
      </property>
     </widget>
    </widget>
@@ -1130,6 +1146,8 @@ font: 28pt &quot;MS Shell Dlg 2&quot;;</string>
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="img/img.qrc"/>
+ </resources>
  <connections/>
 </ui>
