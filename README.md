@@ -1,2 +1,0 @@
-# Presto
-Mesin uji tekan
