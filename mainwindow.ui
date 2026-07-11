@@ -38,9 +38,9 @@
     <widget class="QPushButton" name="btnRefreshSerialPort">
      <property name="geometry">
       <rect>
-       <x>330</x>
+       <x>340</x>
        <y>570</y>
-       <width>101</width>
+       <width>91</width>
        <height>81</height>
       </rect>
      </property>
@@ -140,7 +140,7 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="img/img.qrc">
+       <iconset resource="../../presto/img/img.qrc">
         <normaloff>:/disconnect.png</normaloff>:/disconnect.png</iconset>
       </property>
       <property name="iconSize">
@@ -169,7 +169,7 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="img/img.qrc">
+       <iconset resource="../../presto/img/img.qrc">
         <normaloff>:/disconnect.png</normaloff>:/disconnect.png</iconset>
       </property>
       <property name="iconSize">
@@ -430,7 +430,7 @@ color: rgb(255, 250, 189);</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="img/img.qrc">
+       <iconset resource="../../presto/img/img.qrc">
         <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
       </property>
      </widget>
@@ -563,7 +563,7 @@ color: rgb(255, 250, 189);</string>
        <string/>
       </property>
       <property name="icon">
-       <iconset resource="img/img.qrc">
+       <iconset resource="../../presto/img/img.qrc">
         <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
       </property>
      </widget>
@@ -729,7 +729,7 @@ font: 72pt &quot;MS Shell Dlg 2&quot;;</string>
       <string notr="true">border-image: url(:/zero1.png);</string>
      </property>
      <property name="text">
-      <string>Reset Encoder</string>
+      <string/>
      </property>
     </widget>
     <widget class="QLabel" name="labelDisplacementmm">
@@ -774,9 +774,9 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
     <widget class="QLabel" name="labelStopWatch">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>100</y>
-       <width>441</width>
+       <x>20</x>
+       <y>90</y>
+       <width>431</width>
        <height>91</height>
       </rect>
      </property>
@@ -950,7 +950,7 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
       <string notr="true">border-image: url(:/arrowcircle1.png);</string>
      </property>
      <property name="text">
-      <string>tera</string>
+      <string/>
      </property>
     </widget>
     <widget class="QLineEdit" name="labelTargetBebanVal">
@@ -1130,8 +1130,6 @@ font: 28pt &quot;MS Shell Dlg 2&quot;;</string>
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="img/img.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

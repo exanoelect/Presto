@@ -1486,7 +1486,7 @@ void MainWindow::on_btnStart_clicked()
            if(m_serial && m_serial->isOpen()){
                ui->btnStart->setVisible(false);
                ui->btnStopFromRun->setVisible(true);
-               ui->btnResume->setVisible(true);
+               ui->btnResume->setVisible(false);
 
                QTimer::singleShot(2000, this, [this](){
                    qDebug() << "Startn";
@@ -1968,7 +1968,7 @@ void MainWindow::on_btnStopFromRun_clicked()
 
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
+       ui->btnStopFromRun->setVisible(false);
        ui->btnResume->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
@@ -1995,7 +1995,7 @@ void MainWindow::on_btnResume_clicked()
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
        ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnResume->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2010,3 +2010,75 @@ void MainWindow::on_btnResume_clicked()
 }
 
 
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::on_btnSave_clicked()
+{
+    // File sumber
+   // QString sourceFile = "/home/pi/data/config.json";
+   // logFilePath = exePath + "/log"; //logDir.filePath();
+    QString sourceDir = exePath + "/log";
+
+    QDir dir(sourceDir);
+
+    QFileInfoList files = dir.entryInfoList(
+                QDir::Files | QDir::NoDotAndDotDot);
+
+    if (files.isEmpty())
+    {
+        QMessageBox::warning(this, "Error", "Tidak ada file.");
+        return;
+    }
+
+    std::sort(files.begin(), files.end(),
+              [](const QFileInfo &a, const QFileInfo &b)
+    {
+        return a.birthTime() > b.birthTime();
+    });
+
+    QString sourceFile = files.first().absoluteFilePath();
+
+    // Pastikan file sumber ada
+    if (!QFile::exists(sourceFile))
+    {
+        QMessageBox::warning(this,
+                             "Error",
+                             "File source tidak ditemukan.");
+        return;
+    }
+
+    // Dialog pilih folder
+    QString targetDir = QFileDialog::getExistingDirectory(
+                this,
+                "Pilih Folder Tujuan",
+                QDir::homePath(),
+                QFileDialog::ShowDirsOnly |
+                QFileDialog::DontResolveSymlinks);
+
+    // User menekan Cancel
+    if (targetDir.isEmpty())
+        return;
+
+    // Nama file tetap sama
+    QString targetFile =
+            targetDir + "/" + QFileInfo(sourceFile).fileName();
+
+    // Hapus jika sudah ada
+    if (QFile::exists(targetFile))
+        QFile::remove(targetFile);
+
+    // Copy file
+    if (!QFile::copy(sourceFile, targetFile))
+    {
+        QMessageBox::critical(this,
+                              "Error",
+                              "Failed save file.");
+        return;
+    }
+
+    QMessageBox::information(this,
+                             "Success",
+                             "File succesfully saved");
+}

@@ -131,7 +131,7 @@ private slots:
     void on_btnOpen_clicked();
     void on_btnStopFromRun_clicked();
     void on_btnResume_clicked();
-
+    void on_btnSave_clicked();
 
 private:
     Ui::MainWindow *ui;
