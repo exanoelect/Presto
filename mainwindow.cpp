@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
         QDir().mkpath(logDir.path());
     }
 
-    setWidgetPosition();
+    //setWidgetPosition();
 
     testRunning = false;
     ui->btnStopFromRun->setVisible(false);
