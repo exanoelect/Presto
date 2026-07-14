@@ -13,6 +13,9 @@ MainWindow::MainWindow(QWidget *parent) :
     setupRealtimeDataDemo(ui->plotmmgram);
     setupRealtimeDataDemo(ui->plottsgram);
 
+    ui->plotmmgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    ui->plottsgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+
     //setupPlot();
     DataManagerInit();
 
@@ -51,11 +54,29 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //setWidgetPosition();
 
-    testRunning = false;
-    ui->btnStopFromRun->setVisible(false);
-    ui->btnResume->setVisible(false);
 
+
+    ui->horizontalScrollBar->setRange(-500, 500);
+    ui->verticalScrollBar->setRange(-500, 500);
+
+    // create connection between axes and scroll bars:
+    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
+    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
+    connect(ui->plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
+    connect(ui->plotmmgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
+
+    connect(ui->horizontalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged2(int)));
+    connect(ui->verticalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged2(int)));
+    connect(ui->plottsgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
+    connect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
+
+    testRunning = false;
+    ui->btnPause->setVisible(true);
+    ui->btnStart->setVisible(false);
+    ui->btnSelesai->setVisible(false);
+    ui->btnResume->setVisible(false);
     ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true);
 }
 
 //---------------------------------------------------------------------------------------
@@ -818,6 +839,7 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     //plot->yAxis->setRange(-1.0, 1.0);
     //plot->yAxis->setRange(-0.6, 1.0);
     plotmmgram->yAxis->setRange(0, ui->labelTargetBebanVal->text().toInt()); //10);
+    //ui->plot->axisRect()->setupFullAxesBox(true);
 
     // make left and bottom axes transfer their ranges to right and top axes:
     connect(plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)), plotmmgram->xAxis2, SLOT(setRange(QCPRange)));
@@ -1172,7 +1194,8 @@ void MainWindow::on_btnRefreshSerialPort_clicked()
     //showPortInfo(1);
     fillPortsInfo();
 
-    ui->btnResume->setEnabled(false);
+
+    ui->btnPause->setEnabled(false);
     ui->btnStart->setEnabled(true);
     ui->btnDown->setEnabled(false);
     ui->btnUp->setEnabled(false);
@@ -1184,8 +1207,16 @@ void MainWindow::on_btnRefreshSerialPort_clicked()
     ui->labelTargetBebanVal->setEnabled(false);
     ui->btnSave->setEnabled(false);
     ui->serialPortInfoListBox->setEnabled(true);
-    ui->btnStopFromRun->setEnabled(false);
+    ui->btnSelesai->setEnabled(false);
     ui->teNama->setEnabled(false);
+    ui->btnResume->setEnabled(false);
+    ui->btnResume->setVisible(false);
+
+    ui->btnPause->setVisible(false);
+    ui->btnStart->setVisible(true);
+    ui->btnSelesai->setVisible(false);
+    ui->btnResume->setVisible(false);
+    ui->btnTest->setVisible(false);
 }
 
 /*****************************************************************************************************
@@ -1201,8 +1232,8 @@ void MainWindow::on_btnStop_clicked()
 
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 3; //stop
@@ -1213,6 +1244,46 @@ void MainWindow::on_btnStop_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
+    }
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::on_btnResume_clicked()
+{
+    timerStopWatch->start(5);
+    timerProcessPayload->start(5);
+
+    if(m_serial && m_serial->isOpen()){
+       ui->btnStart->setVisible(false);
+       ui->btnSelesai->setVisible(false);
+       ui->btnPause->setVisible(true);
+
+       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+       quint8 mperintahManual = 0; //
+       quint8 mperintahAuto = 3; //stop auto
+       quint8 mupdateData = 0;
+
+       sendData(mtargetBeban,
+                mperintahManual,
+                mperintahAuto,
+                mupdateData);
+
+       ui->btnPause->setEnabled(true);
+       ui->btnStart->setEnabled(false);
+       ui->btnDown->setEnabled(false);
+       ui->btnUp->setEnabled(false);
+       ui->btnRefreshSerialPort->setEnabled(false);
+       ui->btnOpen->setEnabled(false);
+       ui->btnTera->setEnabled(false);
+       ui->btnResetEncoder->setEnabled(false);
+       ui->btnTargetBebanRefresh->setEnabled(false);
+       ui->labelTargetBebanVal->setEnabled(false);
+       ui->btnSave->setEnabled(false);
+       ui->serialPortInfoListBox->setEnabled(false);
+       ui->teNama->setEnabled(false);
     }
 }
 
@@ -1381,8 +1452,8 @@ void MainWindow::on_btnTera_clicked()
 {
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -1406,8 +1477,8 @@ void MainWindow::on_btnResetEncoder_clicked()
 {
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -1499,9 +1570,27 @@ void MainWindow::on_btnStart_clicked()
        if(ui->serialPortInfoListBox->currentText() != ""){
            if(!init_port()) return;
            if(m_serial && m_serial->isOpen()){
+               //Disable all button, except StopFromRunning
+               ui->btnPause->setVisible(true);
                ui->btnStart->setVisible(false);
-               ui->btnStopFromRun->setVisible(true);
+               ui->btnSelesai->setVisible(true);
                ui->btnResume->setVisible(false);
+
+               ui->btnStart->setEnabled(false);
+               ui->btnPause->setEnabled(false);
+               ui->btnResume->setEnabled(false);
+               ui->btnDown->setEnabled(false);
+               ui->btnUp->setEnabled(false);
+               ui->btnRefreshSerialPort->setEnabled(false);
+               ui->btnOpen->setEnabled(false);
+               ui->btnTera->setEnabled(false);
+               ui->btnResetEncoder->setEnabled(false);
+               ui->btnTargetBebanRefresh->setEnabled(false);
+               ui->labelTargetBebanVal->setEnabled(false);
+               ui->btnSave->setEnabled(false);
+               ui->serialPortInfoListBox->setEnabled(false);
+               ui->btnSelesai->setEnabled(true);
+               ui->teNama->setEnabled(false);
 
                QTimer::singleShot(2000, this, [this](){
                    qDebug() << "Startn";
@@ -1525,22 +1614,6 @@ void MainWindow::on_btnStart_clicked()
                             mperintahManual,
                             mperintahAuto,
                             mupdateData);
-
-                   //Disable all button, except StopFromRunning
-                   ui->btnResume->setEnabled(false);
-                   ui->btnStart->setEnabled(false);
-                   ui->btnDown->setEnabled(false);
-                   ui->btnUp->setEnabled(false);
-                   ui->btnRefreshSerialPort->setEnabled(false);
-                   ui->btnOpen->setEnabled(false);
-                   ui->btnTera->setEnabled(false);
-                   ui->btnResetEncoder->setEnabled(false);
-                   ui->btnTargetBebanRefresh->setEnabled(false);
-                   ui->labelTargetBebanVal->setEnabled(false);
-                   ui->btnSave->setEnabled(false);
-                   ui->serialPortInfoListBox->setEnabled(false);
-                   ui->btnStopFromRun->setEnabled(true);
-                   ui->teNama->setEnabled(false);
 
                });
            }
@@ -1620,8 +1693,8 @@ void MainWindow::on_btnDown_clicked()
 {
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 2; //turun
@@ -1644,8 +1717,8 @@ void MainWindow::on_btnUp_clicked()
 {
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 1; //naik
@@ -1951,8 +2024,8 @@ void MainWindow::on_btnTargetBebanRefresh_clicked()
 {
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -1993,15 +2066,15 @@ void MainWindow::on_btnOpen_clicked()
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
 ******************************************************************************************************/
-void MainWindow::on_btnStopFromRun_clicked()
+void MainWindow::on_btnSelesai_clicked()
 {
     timerStopWatch->stop();
     timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(false);
-       ui->btnResume->setVisible(true);
+       ui->btnSelesai->setVisible(false);
+       ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2013,7 +2086,7 @@ void MainWindow::on_btnStopFromRun_clicked()
                 mperintahAuto,
                 mupdateData);
 
-       ui->btnResume->setEnabled(true);
+       ui->btnPause->setEnabled(true);
        ui->btnStart->setEnabled(false);
        ui->btnDown->setEnabled(false);
        ui->btnUp->setEnabled(false);
@@ -2034,14 +2107,14 @@ void MainWindow::on_btnStopFromRun_clicked()
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
 ******************************************************************************************************/
-void MainWindow::on_btnResume_clicked()
+void MainWindow::on_btnPause_clicked()
 {
-    timerStopWatch->start();
-    timerProcessPayload->start();
+    timerStopWatch->stop();
+    timerProcessPayload->stop();
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnStopFromRun->setVisible(true);
-       ui->btnResume->setVisible(false);
+       ui->btnSelesai->setVisible(true);
+       ui->btnPause->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2053,8 +2126,9 @@ void MainWindow::on_btnResume_clicked()
                 mperintahAuto,
                 mupdateData);
 
-       ui->btnResume->setEnabled(false);
+       ui->btnPause->setEnabled(false);
        ui->btnStart->setEnabled(false);
+       ui->btnResume->setEnabled(true);
        ui->btnDown->setEnabled(false);
        ui->btnUp->setEnabled(false);
        ui->btnRefreshSerialPort->setEnabled(false);
@@ -2065,7 +2139,7 @@ void MainWindow::on_btnResume_clicked()
        ui->labelTargetBebanVal->setEnabled(false);
        ui->btnSave->setEnabled(false);
        ui->serialPortInfoListBox->setEnabled(false);
-       ui->btnStopFromRun->setEnabled(true);
+       ui->btnSelesai->setEnabled(true);
        ui->teNama->setEnabled(false);
     }
 }
@@ -2151,5 +2225,79 @@ void MainWindow::on_btnSave_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnExit_clicked()
 {
-
+    qApp->quit();
+    // Alternatively: QCoreApplication::quit();
 }
+
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::horzScrollBarChanged(int value)
+{
+  if (qAbs(ui->plottsgram->xAxis->range().center()-value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
+  {
+    ui->plottsgram->xAxis->setRange(value/100.0, ui->plottsgram->xAxis->range().size(), Qt::AlignCenter);
+    ui->plottsgram->replot();
+  }
+}
+
+void MainWindow::vertScrollBarChanged(int value)
+{
+  if (qAbs(ui->plottsgram->yAxis->range().center()+value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
+  {
+    ui->plottsgram->yAxis->setRange(-value/100.0, ui->plottsgram->yAxis->range().size(), Qt::AlignCenter);
+    ui->plottsgram->replot();
+  }
+}
+
+void MainWindow::xAxisChanged(QCPRange range)
+{
+  ui->horizontalScrollBar->setValue(qRound(range.center()*100.0)); // adjust position of scroll bar slider
+  ui->horizontalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
+}
+
+void MainWindow::yAxisChanged(QCPRange range)
+{
+  ui->verticalScrollBar->setValue(qRound(-range.center()*100.0)); // adjust position of scroll bar slider
+  ui->verticalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::horzScrollBar2Changed(int value)
+{
+    if (qAbs(ui->plotmmgram->xAxis->range().center()-value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
+    {
+      ui->plotmmgram->xAxis->setRange(value/100.0, ui->plotmmgram->xAxis->range().size(), Qt::AlignCenter);
+      ui->plotmmgram->replot();
+    }
+}
+
+void MainWindow::vertScrollBar2Changed(int value)
+{
+    if (qAbs(ui->plotmmgram->yAxis->range().center()+value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
+    {
+      ui->plotmmgram->yAxis->setRange(-value/100.0, ui->plotmmgram->yAxis->range().size(), Qt::AlignCenter);
+      ui->plotmmgram->replot();
+    }
+}
+
+void MainWindow::xAxis2Changed(QCPRange range)
+{
+    ui->horizontalScrollBar2->setValue(qRound(range.center()*100.0)); // adjust position of scroll bar slider
+    ui->horizontalScrollBar2->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
+}
+
+void MainWindow::yAxis2Changed(QCPRange range)
+{
+    ui->verticalScrollBar2->setValue(qRound(-range.center()*100.0)); // adjust position of scroll bar slider
+    ui->verticalScrollBar2->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
+}
+
+
+
+

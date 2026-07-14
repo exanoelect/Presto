@@ -30,6 +30,7 @@
 #include <QDoubleValidator>
 #include <QElapsedTimer>
 #include <QFileDialog>
+#include <qcustomplot.h>
 
 #ifdef Q_OS_LINUX
     #define UART_PORT "ttyS0"  //"ttyUSB0" "COM5" "ttyUSB0"
@@ -90,6 +91,7 @@ private slots:
     void on_btnResetEncoder_clicked();
     void on_logSerialTextEdit_textChanged();
     void on_btnStart_clicked();
+    void on_btnResume_clicked();
     void on_btnClearGraphmmGram_clicked();
     void on_btnClearGraphtsgram_clicked();
     void on_btnStart_pressed();
@@ -129,11 +131,25 @@ private slots:
     void on_btnArrowLeft_released();
     void on_btnTargetBebanRefresh_clicked();
     void on_btnOpen_clicked();
-    void on_btnStopFromRun_clicked();
-    void on_btnResume_clicked();
+    void on_btnSelesai_clicked();
+    void on_btnPause_clicked();
     void on_btnSave_clicked();
-
     void on_btnExit_clicked();
+
+    //1...............
+    void horzScrollBarChanged(int value);
+    void vertScrollBarChanged(int value);
+
+    void xAxisChanged(QCPRange range);
+    void yAxisChanged(QCPRange range);
+
+    //2.........................
+    void horzScrollBar2Changed(int value);
+    void vertScrollBar2Changed(int value);
+
+    void xAxis2Changed(QCPRange range);
+    void yAxis2Changed(QCPRange range);
+
 
 private:
     Ui::MainWindow *ui;

@@ -31,5 +31,8 @@
         <file>left2.png</file>
         <file>resume.png</file>
         <file>stop.png</file>
+        <file>stop3.png</file>
+        <file>pause.png</file>
+        <file>selesai.png</file>
     </qresource>
 </RCC>
