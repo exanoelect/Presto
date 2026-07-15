@@ -38,10 +38,10 @@
     <widget class="QPushButton" name="btnRefreshSerialPort">
      <property name="geometry">
       <rect>
-       <x>340</x>
+       <x>330</x>
        <y>570</y>
-       <width>91</width>
-       <height>81</height>
+       <width>101</width>
+       <height>91</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -55,7 +55,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>570</y>
+       <y>580</y>
        <width>281</width>
        <height>81</height>
       </rect>
@@ -249,10 +249,11 @@ font: 24pt &quot;.AppleSystemUIFont&quot;;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color: #14A0F1;</string>
+      <string notr="true">background-color: #14A0F1;
+font: 18pt &quot;MS Shell Dlg 2&quot;;</string>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt;&quot;&gt;BATAS ATAS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:36pt;&quot;&gt;BATAS ATAS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -274,7 +275,7 @@ font: 24pt &quot;.AppleSystemUIFont&quot;;</string>
       <string notr="true">background-color: #14A0F1;</string>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt;&quot;&gt;BATAS BAWAH&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:36pt;&quot;&gt;BATAS BAWAH&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -380,8 +381,8 @@ p, li { white-space: pre-wrap; }
      </property>
      <property name="geometry">
       <rect>
-       <x>50</x>
-       <y>480</y>
+       <x>10</x>
+       <y>470</y>
        <width>211</width>
        <height>91</height>
       </rect>
@@ -400,7 +401,7 @@ p, li { white-space: pre-wrap; }
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>500</y>
+       <y>470</y>
        <width>211</width>
        <height>91</height>
       </rect>
@@ -492,25 +493,6 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QLabel" name="labelLoadmm">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>150</y>
-        <width>41</width>
-        <height>71</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: transparent;</string>
-      </property>
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load&lt;/p&gt;&lt;p&gt;gram&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
      <widget class="QPushButton" name="btnArrowRightDL">
       <property name="geometry">
        <rect>
@@ -530,7 +512,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QPushButton" name="btnArrowLeftDL">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>20</x>
         <y>10</y>
         <width>80</width>
         <height>30</height>
@@ -546,10 +528,10 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QScrollBar" name="horizontalScrollBar2">
       <property name="geometry">
        <rect>
-        <x>40</x>
+        <x>10</x>
         <y>590</y>
-        <width>1361</width>
-        <height>17</height>
+        <width>1391</width>
+        <height>20</height>
        </rect>
       </property>
       <property name="orientation">
@@ -572,10 +554,10 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QCustomPlot" name="plotmmgram">
       <property name="geometry">
        <rect>
-        <x>50</x>
+        <x>20</x>
         <y>50</y>
-        <width>1331</width>
-        <height>541</height>
+        <width>1360</width>
+        <height>540</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -647,25 +629,6 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QLabel" name="labelLoadTs">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>180</y>
-        <width>41</width>
-        <height>71</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: transparent;</string>
-      </property>
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load&lt;/p&gt;&lt;p&gt;kg&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
      <widget class="QPushButton" name="btnArrowRight">
       <property name="geometry">
        <rect>
@@ -685,7 +648,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QPushButton" name="btnArrowLeft">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>20</x>
         <y>10</y>
         <width>80</width>
         <height>30</height>
@@ -701,10 +664,10 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QScrollBar" name="horizontalScrollBar">
       <property name="geometry">
        <rect>
-        <x>40</x>
+        <x>0</x>
         <y>590</y>
-        <width>1361</width>
-        <height>17</height>
+        <width>1411</width>
+        <height>20</height>
        </rect>
       </property>
       <property name="orientation">
@@ -714,10 +677,10 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QScrollBar" name="verticalScrollBar">
       <property name="geometry">
        <rect>
-        <x>1380</x>
-        <y>55</y>
+        <x>1390</x>
+        <y>50</y>
         <width>20</width>
-        <height>531</height>
+        <height>541</height>
        </rect>
       </property>
       <property name="orientation">
@@ -727,10 +690,10 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QCustomPlot" name="plottsgram">
       <property name="geometry">
        <rect>
-        <x>50</x>
+        <x>20</x>
         <y>50</y>
-        <width>1321</width>
-        <height>531</height>
+        <width>1360</width>
+        <height>540</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -787,7 +750,7 @@ font: 72pt &quot;MS Shell Dlg 2&quot;;</string>
      <property name="geometry">
       <rect>
        <x>350</x>
-       <y>80</y>
+       <y>90</y>
        <width>101</width>
        <height>91</height>
       </rect>

@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //setGeometry(0, 0, widthScreen, heightScreen);
 
     setupRealtimeDataDemo(ui->plotmmgram);
-    setupRealtimeDataDemo(ui->plottsgram);
+    setupRealtimeDataDemoTs(ui->plottsgram);
 
     ui->plotmmgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
     ui->plottsgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
@@ -43,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->labelTargetBebanVal->setValidator(validator);
 
-
     exePath = QCoreApplication::applicationDirPath();
     logDir = exePath + "/log";
 
@@ -54,24 +53,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //setWidgetPosition();
 
-
-
-    ui->horizontalScrollBar->setRange(-500, 500);
-    ui->verticalScrollBar->setRange(-500, 500);
-
-    // create connection between axes and scroll bars:
-    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
-    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
-    connect(ui->plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
-    connect(ui->plotmmgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
-
-    connect(ui->horizontalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged2(int)));
-    connect(ui->verticalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged2(int)));
-    connect(ui->plottsgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
-    connect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
-
     testRunning = false;
-    ui->btnPause->setVisible(true);
+    ui->btnPause->setVisible(false);
     ui->btnStart->setVisible(false);
     ui->btnSelesai->setVisible(false);
     ui->btnResume->setVisible(false);
@@ -219,6 +202,10 @@ void MainWindow::drawRealTimemmgram()
     ui->plotmmgram->graph(0)->setPen(QPen(Qt::yellow, 2));
     //ui->plot->graph(0)->setData(x, y);
     ui->plotmmgram->graph(0)->setData(x,y);
+
+    ui->plotmmgram->xAxis->setLabel("Displacement (mm)");
+    ui->plotmmgram->yAxis->setLabel("Load (kg)");
+
     ui->plotmmgram->rescaleAxes();
     ui->plotmmgram->replot();
 }
@@ -294,6 +281,40 @@ void MainWindow::printData()
 //---------------------------------------------------------------------------------------
 void MainWindow::loadCsvToPlot(const QString &fileName)
 {
+    //Setup
+    ui->horizontalScrollBar->setRange(-500, 500);
+    ui->verticalScrollBar->setRange(-500, 500);
+
+    // create connection between axes and scroll bars:
+    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBar2Changed(int)));
+    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBar2Changed(int)));
+    connect(ui->plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxis2Changed(QCPRange)));
+    connect(ui->plotmmgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxis2Changed(QCPRange)));
+
+    connect(ui->horizontalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
+    connect(ui->verticalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
+    connect(ui->plottsgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
+    connect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
+
+    // configure scroll bars:
+    // Since scroll bars only support integer values, we'll set a high default range of -500..500 and
+    // divide scroll bar position values by 100 to provide a scroll range -5..5 in floating point
+    // axis coordinates. if you want to dynamically grow the range accessible with the scroll bar,
+    // just increase the minimum/maximum values of the scroll bars as needed.
+    ui->horizontalScrollBar->setRange(-500, 500);
+    ui->verticalScrollBar->setRange(-500, 500);
+
+    ui->horizontalScrollBar2->setRange(-500, 500);
+    ui->verticalScrollBar2->setRange(-500, 500);
+
+     // initialize axis range (and scroll bar positions via signals we just connected):
+    ui->plottsgram->xAxis->setRange(0, 6, Qt::AlignCenter);
+    ui->plottsgram->yAxis->setRange(0, 10, Qt::AlignCenter);
+
+    ui->plotmmgram->xAxis->setRange(0, 6, Qt::AlignCenter);
+    ui->plotmmgram->yAxis->setRange(0, 10, Qt::AlignCenter);
+
+    //Entry data
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -354,7 +375,7 @@ void MainWindow::loadCsvToPlot(const QString &fileName)
     ui->plottsgram->graph(0)->setData(displacement, massa);
 
     ui->plottsgram->xAxis->setLabel("Time (s)");
-    ui->plottsgram->yAxis->setLabel("Value");
+    ui->plottsgram->yAxis->setLabel("load (kg)");
 
     ui->plottsgram->xAxis->rescale();
     ui->plottsgram->yAxis->rescale();
@@ -371,14 +392,16 @@ void MainWindow::loadCsvToPlot(const QString &fileName)
 
     qDebug() << "330";
 
-    ui->plotmmgram->xAxis->setLabel("Time (s)");
-    ui->plotmmgram->yAxis->setLabel("Value");
+    ui->plotmmgram->xAxis->setLabel("Displacement (mm)");
+    ui->plotmmgram->yAxis->setLabel("Load (kg)");
 
     ui->plotmmgram->xAxis->rescale();
     ui->plotmmgram->yAxis->rescale();
 
     ui->plotmmgram->replot();
     qDebug() << "340";
+
+
 
 }
 
@@ -1153,6 +1176,8 @@ void MainWindow::realtimeDataSlot(QString value)
      }
 
      // make key axis range scroll with the data (at a constant range size of 8):
+     ui->plottsgram->xAxis->setLabel("Time (s)");
+     ui->plottsgram->yAxis->setLabel("load (kg)");
      ui->plottsgram->xAxis->setRange(key, 8, Qt::AlignRight);
 
      static QElapsedTimer replotTimer;
@@ -1253,17 +1278,19 @@ void MainWindow::on_btnStop_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnResume_clicked()
 {
-    timerStopWatch->start(5);
-    timerProcessPayload->start(5);
+    timerStopWatch->start(10);
+    timerProcessPayload->start(10);
 
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
        ui->btnSelesai->setVisible(false);
        ui->btnPause->setVisible(true);
+       ui->btnPause->setEnabled(true);
+       ui->btnResume->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
-       quint8 mperintahAuto = 3; //stop auto
+       quint8 mperintahAuto = 1; //start auto
        quint8 mupdateData = 0;
 
        sendData(mtargetBeban,
@@ -1390,6 +1417,58 @@ void MainWindow::slotTimerProcessPayload()
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
+        //Limit switch label
+        switch (dataTerima.limitSwitch) {
+        case 0: //normal
+            break;
+        case 1: //atas
+            ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: #D71920;"
+                "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
+            break;
+        case 2: //bawah
+            ui->labelBatasBawah->setText(QString::number(dataTerima.bebanAktual));
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: #D71920;"
+                "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
+            break;
+        default:
+            ui->labelBatasAtas->setText("");
+            ui->labelBatasBawah->setText("");
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: #14A0F1;"
+                "color: black;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
+            ui->labelBatasBawah->setStyleSheet(
+                "QLabel {"
+                "background-color: #14A0F1;"
+                "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
+            break;
+
+        }
     }
 }
 
@@ -1577,11 +1656,11 @@ void MainWindow::on_btnStart_clicked()
                ui->btnResume->setVisible(false);
 
                ui->btnStart->setEnabled(false);
-               ui->btnPause->setEnabled(false);
+               ui->btnPause->setEnabled(true);
                ui->btnResume->setEnabled(false);
-               ui->btnDown->setEnabled(false);
-               ui->btnUp->setEnabled(false);
-               ui->btnRefreshSerialPort->setEnabled(false);
+               ui->btnDown->setEnabled(true);
+               ui->btnUp->setEnabled(true);
+               ui->btnRefreshSerialPort->setEnabled(true);
                ui->btnOpen->setEnabled(false);
                ui->btnTera->setEnabled(false);
                ui->btnResetEncoder->setEnabled(false);
@@ -2111,6 +2190,7 @@ void MainWindow::on_btnPause_clicked()
 {
     timerStopWatch->stop();
     timerProcessPayload->stop();
+
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
        ui->btnSelesai->setVisible(true);
@@ -2118,7 +2198,7 @@ void MainWindow::on_btnPause_clicked()
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
-       quint8 mperintahAuto = 1; //start, resume auto
+       quint8 mperintahAuto = 2; //start, resume auto
        quint8 mupdateData = 0;
 
        sendData(mtargetBeban,
@@ -2127,8 +2207,12 @@ void MainWindow::on_btnPause_clicked()
                 mupdateData);
 
        ui->btnPause->setEnabled(false);
+       ui->btnPause->setVisible(false);
+
        ui->btnStart->setEnabled(false);
        ui->btnResume->setEnabled(true);
+       ui->btnResume->setVisible(true);
+
        ui->btnDown->setEnabled(false);
        ui->btnUp->setEnabled(false);
        ui->btnRefreshSerialPort->setEnabled(false);
@@ -2140,6 +2224,7 @@ void MainWindow::on_btnPause_clicked()
        ui->btnSave->setEnabled(false);
        ui->serialPortInfoListBox->setEnabled(false);
        ui->btnSelesai->setEnabled(true);
+       ui->btnSelesai->setVisible(true);
        ui->teNama->setEnabled(false);
     }
 }
