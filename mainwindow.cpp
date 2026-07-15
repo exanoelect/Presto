@@ -55,8 +55,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     testRunning = false;
     ui->btnPause->setVisible(false);
-    ui->btnStart->setVisible(false);
-    ui->btnSelesai->setVisible(false);
+    ui->btnStart->setEnabled(false);
+    ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true);
@@ -1697,6 +1697,7 @@ void MainWindow::on_btnStart_clicked()
 
     startRcvUart = true;
     //ui->btnStart->setText("STOP");
+    /*
     QDateTime currentDateTime = QDateTime::currentDateTime();
     QString strTanggal = currentDateTime.toString("dd");
     QLocale indonesian(QLocale::Indonesian);
@@ -1708,8 +1709,9 @@ void MainWindow::on_btnStart_clicked()
 
     strTanggal.append(currentDateTime.toString("yyyy"));
     strTanggal.append(currentDateTime.toString("hhmmss"));
+    */
 
-    logFilePath = logDir.filePath(ui->teNama->toPlainText() + "_" + strTanggal + ".csv");
+    logFilePath = logDir.filePath(ui->teNama->toPlainText());// + "_" + strTanggal + ".csv");
     qDebug() << "Path " << logFilePath;
 
     if(ui->serialPortInfoListBox->currentText() != ""){
@@ -2042,7 +2044,7 @@ void MainWindow::on_btnStop_pressed()
 {
     ui->btnStop->setStyleSheet(
         "QPushButton {"
-        "border-image: url(:/stop2.png);"
+        "border-image: url(:/stop4.png);"
         "}"
     );
 }
@@ -2051,7 +2053,7 @@ void MainWindow::on_btnStop_released()
 {
     ui->btnStop->setStyleSheet(
         "QPushButton {"
-        "border-image: url(:/stop1.png);"
+        "border-image: url(:/stop3.png);"
         "}"
     );
 }
@@ -2166,6 +2168,78 @@ void MainWindow::on_btnArrowLeft_released()
     );
 }
 
+void MainWindow::on_btnResume_pressed()
+{
+    ui->btnResume->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/resume2.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnResume_released()
+{
+    ui->btnResume->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/resume.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnPause_pressed()
+{
+    ui->btnPause->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/pause2.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnPause_released()
+{
+    ui->btnPause->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/pause.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnSelesai_pressed()
+{
+    ui->btnSelesai->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/selesai2.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnSelesai_released()
+{
+    ui->btnSelesai->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/selesai.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnAddNewMeasurement_pressed()
+{
+    ui->btnAddNewMeasurement->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/add2.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnAddNewMeasurement_released()
+{
+    ui->btnAddNewMeasurement->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/add.png);"
+        "}"
+    );
+}
+
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
@@ -2261,6 +2335,8 @@ void MainWindow::on_btnSelesai_clicked()
        ui->btnSave->setEnabled(false);
        ui->serialPortInfoListBox->setEnabled(false);
        ui->teNama->setEnabled(false);
+
+       ui->teNama->setText("");
     }
 }
 
@@ -2397,6 +2473,11 @@ void MainWindow::on_btnExit_clicked()
     // Alternatively: QCoreApplication::quit();
 }
 
+//----------------------------------------------------------------------------------------------------
+void MainWindow::on_btnAddNewMeasurement_clicked()
+{
+    ui->teNama->setText(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+}
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
@@ -2466,56 +2547,8 @@ void MainWindow::yAxis2Changed(QCPRange range)
     ui->verticalScrollBar2->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
 
-void MainWindow::on_btnResume_pressed()
-{
-    ui->btnResume->setStyleSheet(
-        "QPushButton {"
-        "border-image: url(:/resume2.png);"
-        "}"
-    );
-}
 
-void MainWindow::on_btnResume_released()
-{
-    ui->btnResume->setStyleSheet(
-        "QPushButton {"
-        "border-image: url(:/resume.png);"
-        "}"
-    );
-}
 
-void MainWindow::on_btnPause_pressed()
-{
-    ui->btnPause->setStyleSheet(
-        "QPushButton {"
-        "border-image: url(:/pause2.png);"
-        "}"
-    );
-}
 
-void MainWindow::on_btnPause_released()
-{
-    ui->btnPause->setStyleSheet(
-        "QPushButton {"
-        "border-image: url(:/pause.png);"
-        "}"
-    );
-}
 
-void MainWindow::on_btnSelesai_pressed()
-{
-    ui->btnSelesai->setStyleSheet(
-        "QPushButton {"
-        "border-image: url(:/selesai2.png);"
-        "}"
-    );
-}
 
-void MainWindow::on_btnSelesai_released()
-{
-    ui->btnSelesai->setStyleSheet(
-        "QPushButton {"
-        "border-image: url(:/selesai.png);"
-        "}"
-    );
-}

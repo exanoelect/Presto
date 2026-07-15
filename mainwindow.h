@@ -129,12 +129,21 @@ private slots:
     void on_btnArrowRight_released();
     void on_btnArrowLeft_pressed();
     void on_btnArrowLeft_released();
+    void on_btnResume_pressed();
+    void on_btnResume_released();
+    void on_btnPause_pressed();
+    void on_btnPause_released();
+    void on_btnSelesai_pressed();
+    void on_btnSelesai_released();
+    void on_btnAddNewMeasurement_pressed();
+    void on_btnAddNewMeasurement_released();
     void on_btnTargetBebanRefresh_clicked();
     void on_btnOpen_clicked();
     void on_btnSelesai_clicked();
     void on_btnPause_clicked();
     void on_btnSave_clicked();
     void on_btnExit_clicked();
+    void on_btnAddNewMeasurement_clicked();
 
     //1...............
     void horzScrollBarChanged(int value);
@@ -149,19 +158,6 @@ private slots:
 
     void xAxis2Changed(QCPRange range);
     void yAxis2Changed(QCPRange range);
-
-
-    void on_btnResume_pressed();
-
-    void on_btnResume_released();
-
-    void on_btnPause_pressed();
-
-    void on_btnPause_released();
-
-    void on_btnSelesai_pressed();
-
-    void on_btnSelesai_released();
 
 private:
     Ui::MainWindow *ui;
