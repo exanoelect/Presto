@@ -1294,7 +1294,8 @@ void MainWindow::on_btnRefreshSerialPort_clicked()
 
     ui->btnPause->setVisible(false);
     ui->btnStart->setVisible(true);
-    ui->btnSelesai->setVisible(false);
+    ui->btnSelesai->setVisible(true);
+    ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
     ui->btnTest->setVisible(false);
 }
@@ -2302,7 +2303,7 @@ void MainWindow::on_btnSelesai_clicked()
 
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(false);
+       ui->btnSelesai->setEnabled(false);
        ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
