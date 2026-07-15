@@ -34,5 +34,10 @@
         <file>stop3.png</file>
         <file>pause.png</file>
         <file>selesai.png</file>
+        <file>add.png</file>
+        <file>pause2.png</file>
+        <file>resume2.png</file>
+        <file>selesai2.png</file>
+        <file>add2.png</file>
     </qresource>
 </RCC>

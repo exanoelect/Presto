@@ -151,6 +151,18 @@ private slots:
     void yAxis2Changed(QCPRange range);
 
 
+    void on_btnResume_pressed();
+
+    void on_btnResume_released();
+
+    void on_btnPause_pressed();
+
+    void on_btnPause_released();
+
+    void on_btnSelesai_pressed();
+
+    void on_btnSelesai_released();
+
 private:
     Ui::MainWindow *ui;
     QString demoName;
@@ -240,6 +252,9 @@ private:
                   quint8 updateData);
 
     void sendDataStruct(const DataTX &tx);
+    void setPlotView();
+    void resetPlotView();
+    bool setupPlotView;
 };
 
 #endif // MAINWINDOW_H

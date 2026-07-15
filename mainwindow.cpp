@@ -60,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->btnResume->setVisible(false);
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true);
+
+    setupPlotView = false;
 }
 
 //---------------------------------------------------------------------------------------
@@ -281,38 +283,7 @@ void MainWindow::printData()
 //---------------------------------------------------------------------------------------
 void MainWindow::loadCsvToPlot(const QString &fileName)
 {
-    //Setup
-    ui->horizontalScrollBar->setRange(-500, 500);
-    ui->verticalScrollBar->setRange(-500, 500);
 
-    // create connection between axes and scroll bars:
-    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBar2Changed(int)));
-    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBar2Changed(int)));
-    connect(ui->plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxis2Changed(QCPRange)));
-    connect(ui->plotmmgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxis2Changed(QCPRange)));
-
-    connect(ui->horizontalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
-    connect(ui->verticalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
-    connect(ui->plottsgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
-    connect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
-
-    // configure scroll bars:
-    // Since scroll bars only support integer values, we'll set a high default range of -500..500 and
-    // divide scroll bar position values by 100 to provide a scroll range -5..5 in floating point
-    // axis coordinates. if you want to dynamically grow the range accessible with the scroll bar,
-    // just increase the minimum/maximum values of the scroll bars as needed.
-    ui->horizontalScrollBar->setRange(-500, 500);
-    ui->verticalScrollBar->setRange(-500, 500);
-
-    ui->horizontalScrollBar2->setRange(-500, 500);
-    ui->verticalScrollBar2->setRange(-500, 500);
-
-     // initialize axis range (and scroll bar positions via signals we just connected):
-    ui->plottsgram->xAxis->setRange(0, 6, Qt::AlignCenter);
-    ui->plottsgram->yAxis->setRange(0, 10, Qt::AlignCenter);
-
-    ui->plotmmgram->xAxis->setRange(0, 6, Qt::AlignCenter);
-    ui->plotmmgram->yAxis->setRange(0, 10, Qt::AlignCenter);
 
     //Entry data
     QFile file(fileName);
@@ -465,6 +436,90 @@ void MainWindow::sendDataStruct(const MainWindow::DataTX &tx)
      packet[9] = 0x00;
 
      m_serial->write(packet);
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::setPlotView()
+{
+    //Setup
+    // create connection between axes and scroll bars:
+    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBar2Changed(int)));
+    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBar2Changed(int)));
+    connect(ui->plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxis2Changed(QCPRange)));
+    connect(ui->plotmmgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxis2Changed(QCPRange)));
+
+    connect(ui->horizontalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
+    connect(ui->verticalScrollBar2, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
+    connect(ui->plottsgram->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
+    connect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
+
+    // configure scroll bars:
+    // Since scroll bars only support integer values, we'll set a high default range of -500..500 and
+    // divide scroll bar position values by 100 to provide a scroll range -5..5 in floating point
+    // axis coordinates. if you want to dynamically grow the range accessible with the scroll bar,
+    // just increase the minimum/maximum values of the scroll bars as needed.
+    ui->horizontalScrollBar->setRange(-500, 500);
+    ui->verticalScrollBar->setRange(-500, 500);
+
+    ui->horizontalScrollBar2->setRange(-500, 500);
+    ui->verticalScrollBar2->setRange(-500, 500);
+
+     // initialize axis range (and scroll bar positions via signals we just connected):
+    ui->plottsgram->xAxis->setRange(0, 6, Qt::AlignCenter);
+    ui->plottsgram->yAxis->setRange(0, 10, Qt::AlignCenter);
+
+    ui->plotmmgram->xAxis->setRange(0, 6, Qt::AlignCenter);
+    ui->plotmmgram->yAxis->setRange(0, 10, Qt::AlignCenter);
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::resetPlotView()
+{
+    // Reset Plot TS
+    ui->plottsgram->xAxis->setRange(0, 6, Qt::AlignCenter);
+    ui->plottsgram->yAxis->setRange(0, 10, Qt::AlignCenter);
+    ui->plottsgram->replot();
+
+    // Reset Plot MM
+    ui->plotmmgram->xAxis->setRange(0, 6, Qt::AlignCenter);
+    ui->plotmmgram->yAxis->setRange(0, 10, Qt::AlignCenter);
+    ui->plotmmgram->replot();
+
+    // Reset scrollbar range
+    ui->horizontalScrollBar->setRange(-500, 500);
+    ui->verticalScrollBar->setRange(-500, 500);
+
+    ui->horizontalScrollBar2->setRange(-500, 500);
+    ui->verticalScrollBar2->setRange(-500, 500);
+
+    // Reset posisi scrollbar ke tengah
+    ui->horizontalScrollBar->setValue(0);
+    ui->verticalScrollBar->setValue(0);
+
+    ui->horizontalScrollBar2->setValue(0);
+    ui->verticalScrollBar2->setValue(0);
+
+    disconnect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)),
+               this, SLOT(horzScrollBar2Changed(int)));
+    disconnect(ui->verticalScrollBar, SIGNAL(valueChanged(int)),
+               this, SLOT(vertScrollBar2Changed(int)));
+    disconnect(ui->plotmmgram->xAxis, SIGNAL(rangeChanged(QCPRange)),
+               this, SLOT(xAxis2Changed(QCPRange)));
+    disconnect(ui->plotmmgram->yAxis, SIGNAL(rangeChanged(QCPRange)),
+               this, SLOT(yAxis2Changed(QCPRange)));
+
+    disconnect(ui->horizontalScrollBar2, SIGNAL(valueChanged(int)),
+               this, SLOT(horzScrollBarChanged(int)));
+    disconnect(ui->verticalScrollBar2, SIGNAL(valueChanged(int)),
+               this, SLOT(vertScrollBarChanged(int)));
+    disconnect(ui->plottsgram->xAxis, SIGNAL(rangeChanged(QCPRange)),
+               this, SLOT(xAxisChanged(QCPRange)));
+    disconnect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)),
+               this, SLOT(yAxisChanged(QCPRange)));
 }
 
 //---------------------------------------------------------------------------------------
@@ -949,7 +1004,7 @@ bool MainWindow::init_port()
     // Periksa apakah port sudah diinisialisasi dan terbuka
     if (m_serial && m_serial->isOpen()) {
         qDebug() << "Port already open.";
-        return false;
+        return true;
     }
 
     // Jika sudah ada instance `m_serial`, hapus untuk mencegah kebocoran memori
@@ -1629,71 +1684,81 @@ void MainWindow::on_logSerialTextEdit_textChanged()
 ******************************************************************************************************/
 void MainWindow::on_btnStart_clicked()
 {
-       startRcvUart = true;
-       //ui->btnStart->setText("STOP");
-       QDateTime currentDateTime = QDateTime::currentDateTime();
-       QString strTanggal = currentDateTime.toString("dd");
-       QLocale indonesian(QLocale::Indonesian);
-       QString dayName = indonesian.toString(currentDateTime,"dddd");
-       QString namaBulan = indonesian.toString(currentDateTime, "MMMM");
-       //strTanggal.append(" ");
-       strTanggal.append(namaBulan);
-       //strTanggal.append(" ");
+    if(setupPlotView){
+        resetPlotView();
+        setupPlotView = false;
+    }
 
-       strTanggal.append(currentDateTime.toString("yyyy"));
-       strTanggal.append(currentDateTime.toString("hhmmss"));
+    clearGraph();
+    dataLoad.clear();
+    m_packetQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 
-       logFilePath = logDir.filePath(ui->teNama->toPlainText() + "_" + strTanggal + ".csv");
-       qDebug() << "Path " << logFilePath;
+    startRcvUart = true;
+    //ui->btnStart->setText("STOP");
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    QString strTanggal = currentDateTime.toString("dd");
+    QLocale indonesian(QLocale::Indonesian);
+    QString dayName = indonesian.toString(currentDateTime,"dddd");
+    QString namaBulan = indonesian.toString(currentDateTime, "MMMM");
+    //strTanggal.append(" ");
+    strTanggal.append(namaBulan);
+    //strTanggal.append(" ");
 
-       if(ui->serialPortInfoListBox->currentText() != ""){
-           if(!init_port()) return;
-           if(m_serial && m_serial->isOpen()){
-               //Disable all button, except StopFromRunning
-               ui->btnPause->setVisible(true);
-               ui->btnStart->setVisible(false);
-               ui->btnSelesai->setVisible(true);
-               ui->btnResume->setVisible(false);
+    strTanggal.append(currentDateTime.toString("yyyy"));
+    strTanggal.append(currentDateTime.toString("hhmmss"));
 
-               ui->btnStart->setEnabled(false);
-               ui->btnPause->setEnabled(true);
-               ui->btnResume->setEnabled(false);
-               ui->btnDown->setEnabled(true);
-               ui->btnUp->setEnabled(true);
-               ui->btnRefreshSerialPort->setEnabled(true);
-               ui->btnOpen->setEnabled(false);
-               ui->btnTera->setEnabled(false);
-               ui->btnResetEncoder->setEnabled(false);
-               ui->btnTargetBebanRefresh->setEnabled(false);
-               ui->labelTargetBebanVal->setEnabled(false);
-               ui->btnSave->setEnabled(false);
-               ui->serialPortInfoListBox->setEnabled(false);
-               ui->btnSelesai->setEnabled(true);
-               ui->teNama->setEnabled(false);
+    logFilePath = logDir.filePath(ui->teNama->toPlainText() + "_" + strTanggal + ".csv");
+    qDebug() << "Path " << logFilePath;
 
-               QTimer::singleShot(2000, this, [this](){
-                   qDebug() << "Startn";
-                   //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
-                   setupRealtimeDataDemo(ui->plotmmgram);
-                   setupRealtimeDataDemo(ui->plottsgram);
+    if(ui->serialPortInfoListBox->currentText() != ""){
+       if(!init_port()) return;
+       if(m_serial && m_serial->isOpen()){
+          //Disable all button, except StopFromRunning
+          ui->btnPause->setVisible(true);
+          ui->btnStart->setVisible(false);
+          ui->btnSelesai->setVisible(true);
+          ui->btnResume->setVisible(false);
 
-                   testRunning = true;
-                   elapsedTimer.start();      // mulai stopwatch
+          ui->btnStart->setEnabled(false);
+          ui->btnPause->setEnabled(true);
+          ui->btnResume->setEnabled(false);
+          ui->btnDown->setEnabled(true);
+          ui->btnUp->setEnabled(true);
+          ui->btnRefreshSerialPort->setEnabled(true);
+          ui->btnOpen->setEnabled(false);
+          ui->btnTera->setEnabled(false);
+          ui->btnResetEncoder->setEnabled(false);
+          ui->btnTargetBebanRefresh->setEnabled(false);
+          ui->labelTargetBebanVal->setEnabled(false);
+          ui->btnSave->setEnabled(false);
+          ui->serialPortInfoListBox->setEnabled(false);
+          ui->btnSelesai->setEnabled(true);
+          ui->teNama->setEnabled(false);
 
-                   //elapsedTimer.restart();
-                   timerStopWatch->start(10);
-                   timerProcessPayload->start(10);
+          QTimer::singleShot(2000, this, [this](){
+                qDebug() << "Startn";
+                //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
+                setupRealtimeDataDemo(ui->plotmmgram);
+                setupRealtimeDataDemo(ui->plottsgram);
 
-                   float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-                   quint8 mperintahManual = 0;
-                   quint8 mperintahAuto = 1;
-                   quint8 mupdateData = 1;
+                testRunning = true;
+                elapsedTimer.start();      // mulai stopwatch
 
-                   sendData(mtargetBeban,
-                            mperintahManual,
-                            mperintahAuto,
-                            mupdateData);
+                //elapsedTimer.restart();
+                timerStopWatch->start(10);
+                timerProcessPayload->start(10);
 
+                float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+                quint8 mperintahManual = 0;
+                quint8 mperintahAuto = 1;
+                quint8 mupdateData = 1;
+
+                sendData(mtargetBeban,
+                         mperintahManual,
+                         mperintahAuto,
+                         mupdateData);
                });
            }
        }
@@ -1707,6 +1772,9 @@ void MainWindow::on_btnClearGraphmmGram_clicked()
 {
      clearGraph();
      dataLoad.clear();
+     m_packetQueue.clear();
+     dataTerima = DataTerima{};
+     m_rxBuffer.clear();
 }
 
 /*****************************************************************************************************
@@ -1717,6 +1785,9 @@ void MainWindow::on_btnClearGraphtsgram_clicked()
 {
     clearGraph();
     dataLoad.clear();
+    m_packetQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 }
 
 
@@ -2124,6 +2195,11 @@ void MainWindow::on_btnTargetBebanRefresh_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnOpen_clicked()
 {
+    if(!setupPlotView){
+        setPlotView();
+        setupPlotView = true;
+    }
+
     QString fileName = QFileDialog::getOpenFileName(
           this,
           tr("Open CSV File"),
@@ -2165,12 +2241,19 @@ void MainWindow::on_btnSelesai_clicked()
                 mperintahAuto,
                 mupdateData);
 
-       ui->btnPause->setEnabled(true);
-       ui->btnStart->setEnabled(false);
+       ui->btnPause->setEnabled(false);
+       ui->btnPause->setVisible(false);
+
+       ui->btnResume->setVisible(false);
+       ui->btnResume->setEnabled(false);
+
+       ui->btnStart->setEnabled(true);
+       ui->btnStart->setVisible(true);
+
        ui->btnDown->setEnabled(false);
        ui->btnUp->setEnabled(false);
        ui->btnRefreshSerialPort->setEnabled(false);
-       ui->btnOpen->setEnabled(false);
+       ui->btnOpen->setEnabled(true);
        ui->btnTera->setEnabled(false);
        ui->btnResetEncoder->setEnabled(false);
        ui->btnTargetBebanRefresh->setEnabled(false);
@@ -2383,6 +2466,56 @@ void MainWindow::yAxis2Changed(QCPRange range)
     ui->verticalScrollBar2->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
 
+void MainWindow::on_btnResume_pressed()
+{
+    ui->btnResume->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/resume2.png);"
+        "}"
+    );
+}
 
+void MainWindow::on_btnResume_released()
+{
+    ui->btnResume->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/resume.png);"
+        "}"
+    );
+}
 
+void MainWindow::on_btnPause_pressed()
+{
+    ui->btnPause->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/pause2.png);"
+        "}"
+    );
+}
 
+void MainWindow::on_btnPause_released()
+{
+    ui->btnPause->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/pause.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnSelesai_pressed()
+{
+    ui->btnSelesai->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/selesai2.png);"
+        "}"
+    );
+}
+
+void MainWindow::on_btnSelesai_released()
+{
+    ui->btnSelesai->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/selesai.png);"
+        "}"
+    );
+}
