@@ -66,6 +66,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->btnDown->setEnabled(false);
     ui->btnUp->setEnabled(false);
     ui->btnStop->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->teNama->setEnabled(false);
+
+    ui->btnArrowLeftDL->setVisible(false);
+    ui->btnArrowRight->setVisible(false);
 
     setupPlotView = false;
 }
@@ -1345,7 +1350,8 @@ void MainWindow::on_btnResume_clicked()
 
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(false);
+       ui->btnSelesai->setVisible(true);
+       ui->btnSelesai->setEnabled(false);
        ui->btnPause->setVisible(true);
        ui->btnPause->setEnabled(true);
        ui->btnResume->setVisible(false);
@@ -1748,6 +1754,7 @@ void MainWindow::on_btnStart_clicked()
           ui->serialPortInfoListBox->setEnabled(false);
           ui->btnSelesai->setEnabled(true);
           ui->teNama->setEnabled(false);
+          ui->btnAddNewMeasurement->setEnabled(false);
 
           QTimer::singleShot(2000, this, [this](){
                 qDebug() << "Startn";
@@ -2338,13 +2345,14 @@ void MainWindow::on_btnSelesai_clicked()
        ui->btnUp->setEnabled(false);
        ui->btnRefreshSerialPort->setEnabled(false);
        ui->btnOpen->setEnabled(true);
-       ui->btnTera->setEnabled(false);
-       ui->btnResetEncoder->setEnabled(false);
-       ui->btnTargetBebanRefresh->setEnabled(false);
+       ui->btnTera->setEnabled(true);
+       ui->btnResetEncoder->setEnabled(true);
+       ui->btnTargetBebanRefresh->setEnabled(true);
        ui->labelTargetBebanVal->setEnabled(false);
        ui->btnSave->setEnabled(false);
        ui->serialPortInfoListBox->setEnabled(false);
-       ui->teNama->setEnabled(false);
+       ui->teNama->setEnabled(true);
+       ui->btnAddNewMeasurement->setEnabled(true);
 
        ui->teNama->setText("");
     }
@@ -2486,7 +2494,8 @@ void MainWindow::on_btnExit_clicked()
 //----------------------------------------------------------------------------------------------------
 void MainWindow::on_btnAddNewMeasurement_clicked()
 {
-    ui->teNama->setText(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+    ui->teNama->setText(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+    ui->teNama->setEnabled(true);
 }
 
 /*****************************************************************************************************
