@@ -61,6 +61,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true);
 
+    ui->btnTera->setEnabled(false);
+    ui->btnResetEncoder->setEnabled(false);
+    ui->btnDown->setEnabled(false);
+    ui->btnUp->setEnabled(false);
+    ui->btnStop->setEnabled(false);
+
     setupPlotView = false;
 }
 
@@ -1599,6 +1605,8 @@ void MainWindow::on_btnTera_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
+
+       ui->labelLoadValue->setText("0.0000");
     }
 }
 
@@ -1624,9 +1632,10 @@ void MainWindow::on_btnResetEncoder_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
-    }}
 
-
+       ui->labelDisplacementValue->setText("0.0000");
+    }
+}
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
