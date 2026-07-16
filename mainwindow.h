@@ -260,9 +260,9 @@ private:
     void modeBegin();
     void modeLoadPort();
     void modeStart();
-    void modeRun();
-    void modePause();
-    void modeResume();
+    void modeRunning();
+    void modePaused();
+    void modeResumed();
     void modeEnd();
 
     msglogout *mMsgLogout =  nullptr;

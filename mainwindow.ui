@@ -27,7 +27,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: #F3F3F3;</string>
+     <string notr="true">background-color: #F3F3F3;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -61,7 +62,9 @@
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">font: 75 36pt &quot;MS Shell Dlg 2&quot;;</string>
+      <string notr="true">font: 75 36pt &quot;MS Shell Dlg 2&quot;;
+border-radius: 30px;
+background-color: rgb(251, 255, 203);</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btnStart">
@@ -249,8 +252,8 @@ font: 18pt &quot;MS Shell Dlg 2&quot;;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color: #14A0F1;
-font: 18pt &quot;MS Shell Dlg 2&quot;;</string>
+      <string notr="true">font: 18pt &quot;MS Shell Dlg 2&quot;;
+background-color: rgb(143, 255, 248);</string>
      </property>
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:36pt;&quot;&gt;BATAS ATAS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -272,7 +275,7 @@ font: 18pt &quot;MS Shell Dlg 2&quot;;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color: #14A0F1;</string>
+      <string notr="true">background-color: rgb(133, 255, 255);</string>
      </property>
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:36pt;&quot;&gt;BATAS BAWAH&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -442,13 +445,14 @@ p, li { white-space: pre-wrap; }
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: #F3F3F3;</string>
+     <string notr="true">background-color: #F3F3F3;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="page">
      <widget class="QPushButton" name="btnClearGraphmmGram">
@@ -546,9 +550,9 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      <widget class="QScrollBar" name="horizontalScrollBar2">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>20</x>
         <y>590</y>
-        <width>1391</width>
+        <width>1361</width>
         <height>20</height>
        </rect>
       </property>
@@ -562,7 +566,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
         <x>1390</x>
         <y>40</y>
         <width>20</width>
-        <height>551</height>
+        <height>531</height>
        </rect>
       </property>
       <property name="orientation">
@@ -733,7 +737,8 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:#FFDE99;</string>
+     <string notr="true">background-color:#FFDE99;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::StyledPanel</enum>
@@ -811,7 +816,8 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:#FFDE99;</string>
+     <string notr="true">background-color:#FFDE99;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::StyledPanel</enum>
@@ -873,7 +879,8 @@ font:  32pt &quot;.AppleSystemUIFont&quot;;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:#FFDE99;</string>
+     <string notr="true">background-color:#FFDE99;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::StyledPanel</enum>
@@ -954,7 +961,8 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:#FFDE99;</string>
+     <string notr="true">background-color:#FFDE99;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::StyledPanel</enum>
@@ -1029,7 +1037,8 @@ font: 48pt &quot;MS Shell Dlg 2&quot;;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:#5FB7D4;</string>
+     <string notr="true">background-color:#5FB7D4;
+border-radius: 30px;</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::StyledPanel</enum>
@@ -1040,10 +1049,10 @@ font: 48pt &quot;MS Shell Dlg 2&quot;;</string>
     <widget class="QPushButton" name="btnSave">
      <property name="geometry">
       <rect>
-       <x>120</x>
+       <x>140</x>
        <y>20</y>
-       <width>111</width>
-       <height>91</height>
+       <width>101</width>
+       <height>81</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -1056,10 +1065,10 @@ font: 48pt &quot;MS Shell Dlg 2&quot;;</string>
     <widget class="QPushButton" name="btnOpen">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>101</width>
-       <height>91</height>
+       <x>30</x>
+       <y>20</y>
+       <width>91</width>
+       <height>81</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -1121,7 +1130,8 @@ color: black;</string>
      </property>
      <property name="styleSheet">
       <string notr="true">background-color: transparent;
-color: black;</string>
+color: black;
+border-radius: 30px;</string>
      </property>
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:48pt;&quot;&gt;MESIN UJI TEKAN&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -1140,7 +1150,8 @@ color: black;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">border-image: url(:/application-exit.png);</string>
+      <string notr="true">border-image: url(:/application-exit.png);
+border-radius: 30px;</string>
      </property>
      <property name="text">
       <string/>
@@ -1158,7 +1169,8 @@ color: black;</string>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(247, 255, 237);
-font: 28pt &quot;MS Shell Dlg 2&quot;;</string>
+font: 28pt &quot;MS Shell Dlg 2&quot;;
+border-radius: 30px;</string>
     </property>
     <property name="text">
      <string>000</string>

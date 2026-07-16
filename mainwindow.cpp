@@ -521,6 +521,8 @@ void MainWindow::resetPlotView()
 //---------------------------------------------------------------------------------------
 void MainWindow::modeBegin()
 {
+    qDebug() << "mode begin";
+
     ui->btnPause->setVisible(false);
     ui->btnStart->setEnabled(false);
     ui->btnSelesai->setEnabled(false);
@@ -549,6 +551,12 @@ void MainWindow::modeBegin()
     ui->verticalScrollBar2->setVisible(false);
     ui->horizontalScrollBar->setVisible(false);
     ui->horizontalScrollBar2->setVisible(false);
+
+    clearGraph();
+    dataLoad.clear();
+    m_packetQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -556,6 +564,8 @@ void MainWindow::modeBegin()
 //---------------------------------------------------------------------------------------
 void MainWindow::modeLoadPort()
 {
+    qDebug() << "mode load";
+
     ui->btnPause->setVisible(false);
     ui->btnStart->setEnabled(false);
     ui->btnSelesai->setEnabled(false);
@@ -586,8 +596,10 @@ void MainWindow::modeLoadPort()
 //---------------------------------------------------------------------------------------
 void MainWindow::modeStart()
 {
-    ui->btnPause->setVisible(true);  //untuk menSTOP
-    ui->btnStart->setEnabled(false);
+    qDebug() << "mode start";
+
+    ui->btnPause->setVisible(false);  //untuk menSTOP
+    ui->btnStart->setEnabled(true);
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
 
@@ -611,13 +623,21 @@ void MainWindow::modeStart()
     ui->btnArrowRight->setVisible(false);
 
     ui->btnExit->setEnabled(false);
+
+    clearGraph();
+    dataLoad.clear();
+    m_packetQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 }
 
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void MainWindow::modeRun()
+void MainWindow::modeRunning()
 {
+    qDebug() << "mode running";
+
     ui->btnPause->setVisible(true);  //----> untuk menSTOP operasi
     ui->btnPause->setEnabled(true);  //----> untuk menSTOP operasi
 
@@ -645,8 +665,10 @@ void MainWindow::modeRun()
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void MainWindow::modePause()
+void MainWindow::modePaused()
 {
+    qDebug() << "mode paused";
+
     ui->btnPause->setVisible(false);
     ui->btnPause->setEnabled(false);  //----> untuk menStart operasi
 
@@ -675,8 +697,10 @@ void MainWindow::modePause()
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void MainWindow::modeResume()
+void MainWindow::modeResumed()
 {
+    qDebug() << "mode resumed";
+
     ui->btnPause->setVisible(true);
     ui->btnPause->setEnabled(true);  //----> untuk menSTOP operasi
 
@@ -707,6 +731,8 @@ void MainWindow::modeResume()
 //---------------------------------------------------------------------------------------
 void MainWindow::modeEnd()
 {
+    qDebug() << "mode end";
+
     ui->btnPause->setVisible(false);
     ui->btnPause->setEnabled(false);
 
@@ -1521,7 +1547,7 @@ void MainWindow::on_btnResume_clicked()
     timerProcessPayload->start(10);
 
     if(m_serial && m_serial->isOpen()){
-       modeResume();
+       modeResumed();
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
        quint8 mperintahAuto = 1; //start auto
@@ -1611,6 +1637,7 @@ void MainWindow::slotTimerProcessPayload()
         //------------------------------------
         // Debug
         //------------------------------------
+        /*
         qDebug() << "==========================";
         qDebug() << "Beban        :" << dataTerima.bebanAktual;
         qDebug() << "Perpindahan  :" << dataTerima.perpindahan;
@@ -1622,7 +1649,7 @@ void MainWindow::slotTimerProcessPayload()
         qDebug() << "Zero Encoder :" << dataTerima.zeroEncoder;
         qDebug() << "Update Data  :" << dataTerima.updateData;
         qDebug() << "Auto Flag    :" << dataTerima.autoFlag;
-
+*/
 
         addOrUpdate(dataTerima.bebanAktual,dataTerima.perpindahan); //susun agar tidak ada data redundant
 
@@ -1871,7 +1898,7 @@ void MainWindow::on_btnStart_clicked()
     if(ui->serialPortInfoListBox->currentText() != ""){
        if(!init_port()) return;
        if(m_serial && m_serial->isOpen()){
-          modeStart();
+          modeRunning();
           QTimer::singleShot(2000, this, [this](){
                 qDebug() << "Startn";
                 //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
@@ -2485,7 +2512,7 @@ void MainWindow::on_btnPause_clicked()
     timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
-       modePause();
+       modePaused();
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2620,6 +2647,7 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
     ui->labelStopWatch->setText("00:00:00");
 
     ui->btnStart->setEnabled(true);
+    modeStart();
 }
 
 /*****************************************************************************************************
@@ -2734,5 +2762,5 @@ void MainWindow::onbtnYes_msgEndUkurClicked()
 //------------------------------------------------------------------------------------
 void MainWindow::onbtnNo_msgEndUkurClicked()
 {
-    modeBegin();
+    modePaused();
 }
