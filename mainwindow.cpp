@@ -544,6 +544,11 @@ void MainWindow::modeBegin()
 
     ui->btnArrowLeftDL->setVisible(false);
     ui->btnArrowRight->setVisible(false);
+
+    ui->verticalScrollBar->setVisible(false);
+    ui->verticalScrollBar2->setVisible(false);
+    ui->horizontalScrollBar->setVisible(false);
+    ui->horizontalScrollBar2->setVisible(false);
 }
 
 //---------------------------------------------------------------------------------------
@@ -552,7 +557,7 @@ void MainWindow::modeBegin()
 void MainWindow::modeLoadPort()
 {
     ui->btnPause->setVisible(false);
-    ui->btnStart->setEnabled(true); //---->>> untuk open port
+    ui->btnStart->setEnabled(false);
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
 
@@ -604,6 +609,8 @@ void MainWindow::modeStart()
 
     ui->btnArrowLeftDL->setVisible(false);
     ui->btnArrowRight->setVisible(false);
+
+    ui->btnExit->setEnabled(false);
 }
 
 //---------------------------------------------------------------------------------------
@@ -703,8 +710,8 @@ void MainWindow::modeEnd()
     ui->btnPause->setVisible(false);
     ui->btnPause->setEnabled(false);
 
-    ui->btnStart->setEnabled(true);    //--->> untuk memulai pengukuran baru
-    ui->btnStart->setVisible(true);    //--->> untuk memulai pengukuran baru
+    ui->btnStart->setEnabled(false);
+    ui->btnStart->setVisible(true);
 
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
@@ -725,6 +732,8 @@ void MainWindow::modeEnd()
     ui->btnDown->setEnabled(false);
     ui->btnUp->setEnabled(false);
     ui->btnStop->setEnabled(false);
+
+    ui->btnExit->setEnabled(true);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2421,8 +2430,32 @@ void MainWindow::on_btnOpen_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnSelesai_clicked()
 {
-    timerStopWatch->stop();
-    timerProcessPayload->stop();
+    if (!mMsgEndUkur) {
+        qDebug() << "warningbox baru akan dicreate";
+        mMsgEndUkur = new msgendukur(this);
+        connect(mMsgEndUkur, &msgendukur::btnYesClicked, this, &MainWindow::onbtnYes_msgEndUkurClicked);
+        connect(mMsgEndUkur, &msgendukur::btnNoClicked, this, &MainWindow::onbtnNo_msgEndUkurClicked);
+        connect(mMsgEndUkur, &QObject::destroyed, [=]() mutable {
+            qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
+            mMsgEndUkur = nullptr; // Set pointer to nullptr
+        });
+        mMsgEndUkur->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+        mMsgEndUkur->setAttribute(Qt::WA_TranslucentBackground);
+
+        mMsgEndUkur->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+        mMsgEndUkur->setAttribute(Qt::WA_TranslucentBackground);
+        mMsgEndUkur->setWindowModality(Qt::ApplicationModal);
+        mMsgEndUkur->setAttribute(Qt::WA_DeleteOnClose);
+        mMsgEndUkur->show();
+    } else {
+        // Jika sudah ada, kirim notifikasi
+        qDebug() << "warningbox udah dicreate";
+        //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
+    }
+
+    /*
+    if(timerStopWatch->isActive()) timerStopWatch->stop();
+    if(timerProcessPayload->isActive()) timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
        modeEnd();
@@ -2438,6 +2471,7 @@ void MainWindow::on_btnSelesai_clicked()
 
        ui->teNama->setText("");
     }
+    */
 }
 
 
@@ -2584,6 +2618,8 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
     ui->labelLoadValue->setText("0.0000");
     ui->labelDisplacementValue->setText("0.0000");
     ui->labelStopWatch->setText("00:00:00");
+
+    ui->btnStart->setEnabled(true);
 }
 
 /*****************************************************************************************************
@@ -2667,4 +2703,36 @@ void MainWindow::onbtnNo_msgLogoutClicked()
 {
     qDebug() << "btn no msglog diklik";
     //mMsgLogout =  nullptr;
+    modeLoadPort();
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::onbtnYes_msgEndUkurClicked()
+{
+    if(timerStopWatch->isActive()) timerStopWatch->stop();
+    if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+
+    if(m_serial && m_serial->isOpen()){
+       modeEnd();
+       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+       quint8 mperintahManual = 0; //
+       quint8 mperintahAuto = 3; //stop auto
+       quint8 mupdateData = 0;
+
+       sendData(mtargetBeban,
+                mperintahManual,
+                mperintahAuto,
+                mupdateData);
+
+       ui->teNama->setText("");
+    }
+}
+
+//------------------------------------------------------------------------------------
+void MainWindow::onbtnNo_msgEndUkurClicked()
+{
+    modeBegin();
 }

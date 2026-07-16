@@ -40,5 +40,7 @@
         <file>selesai2.png</file>
         <file>add2.png</file>
         <file>stop4.png</file>
+        <file>no.png</file>
+        <file>yes.png</file>
     </qresource>
 </RCC>

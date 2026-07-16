@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>msglogout</class>
- <widget class="QMainWindow" name="msglogout">
+ <class>msgendukur</class>
+ <widget class="QMainWindow" name="msgendukur">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -74,9 +74,9 @@ border:none;
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>20</x>
       <y>15</y>
-      <width>351</width>
+      <width>491</width>
       <height>50</height>
      </rect>
     </property>
@@ -88,7 +88,7 @@ border:none;
 color:white;</string>
     </property>
     <property name="text">
-     <string>EXIT ?</string>
+     <string>PENGUJIAN SELESAI ?</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>

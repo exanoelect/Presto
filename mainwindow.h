@@ -32,6 +32,9 @@
 #include <QFileDialog>
 #include <qcustomplot.h>
 #include <msglogout.h>
+#include <msgendukur.h>
+
+//color label batas atas bawah background-color: #14A0F1;
 
 #ifdef Q_OS_LINUX
     #define UART_PORT "ttyS0"  //"ttyUSB0" "COM5" "ttyUSB0"
@@ -163,6 +166,9 @@ private slots:
     void onbtnYes_msgLogoutClicked();
     void onbtnNo_msgLogoutClicked();
 
+    void onbtnYes_msgEndUkurClicked();
+    void onbtnNo_msgEndUkurClicked();
+
 private:
     Ui::MainWindow *ui;
     QString demoName;
@@ -260,6 +266,7 @@ private:
     void modeEnd();
 
     msglogout *mMsgLogout =  nullptr;
+    msgendukur *mMsgEndUkur = nullptr;
 
 };
 
