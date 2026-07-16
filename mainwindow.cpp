@@ -54,25 +54,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //setWidgetPosition();
 
     testRunning = false;
-    ui->btnPause->setVisible(false);
-    ui->btnStart->setEnabled(false);
-    ui->btnSelesai->setEnabled(false);
-    ui->btnResume->setVisible(false);
-    ui->btnTest->setVisible(false);
-    ui->btnRefreshSerialPort->setVisible(true);
-
-    ui->btnTera->setEnabled(false);
-    ui->btnResetEncoder->setEnabled(false);
-    ui->btnDown->setEnabled(false);
-    ui->btnUp->setEnabled(false);
-    ui->btnStop->setEnabled(false);
-    ui->btnTargetBebanRefresh->setEnabled(false);
-    ui->teNama->setEnabled(false);
-
-    ui->btnArrowLeftDL->setVisible(false);
-    ui->btnArrowRight->setVisible(false);
-
     setupPlotView = false;
+    modeBegin();
 }
 
 //---------------------------------------------------------------------------------------
@@ -531,6 +514,217 @@ void MainWindow::resetPlotView()
                this, SLOT(xAxisChanged(QCPRange)));
     disconnect(ui->plottsgram->yAxis, SIGNAL(rangeChanged(QCPRange)),
                this, SLOT(yAxisChanged(QCPRange)));
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modeBegin()
+{
+    ui->btnPause->setVisible(false);
+    ui->btnStart->setEnabled(false);
+    ui->btnSelesai->setEnabled(false);
+    ui->btnResume->setVisible(false);
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true);  //----->> cuma ini yg aktif dulu
+    ui->serialPortInfoListBox->setEnabled(true);
+
+    ui->labelTargetBebanVal->setEnabled(true);   //----- untuk entry target beban
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->btnTera->setEnabled(false);
+    ui->btnResetEncoder->setEnabled(false);
+
+    ui->teNama->setEnabled(false);
+    ui->btnAddNewMeasurement->setEnabled(false);
+
+    ui->btnDown->setEnabled(false);
+    ui->btnUp->setEnabled(false);
+    ui->btnStop->setEnabled(false);
+
+    ui->btnArrowLeftDL->setVisible(false);
+    ui->btnArrowRight->setVisible(false);
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modeLoadPort()
+{
+    ui->btnPause->setVisible(false);
+    ui->btnStart->setEnabled(true); //---->>> untuk open port
+    ui->btnSelesai->setEnabled(false);
+    ui->btnResume->setVisible(false);
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true);  //----->> tetap aktif
+    ui->serialPortInfoListBox->setEnabled(true); //----->> tetap aktif
+
+    ui->labelTargetBebanVal->setEnabled(true);   //----- untuk entry target beban
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->btnTera->setEnabled(false);
+    ui->btnResetEncoder->setEnabled(false);
+
+    ui->teNama->setEnabled(true);                //----> entry nama file
+    ui->btnAddNewMeasurement->setEnabled(true);  //generate nama file
+
+    ui->btnDown->setEnabled(false);
+    ui->btnUp->setEnabled(false);
+    ui->btnStop->setEnabled(false);
+
+    ui->btnArrowLeftDL->setVisible(false);
+    ui->btnArrowRight->setVisible(false);
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modeStart()
+{
+    ui->btnPause->setVisible(false);
+    ui->btnStart->setEnabled(false);
+    ui->btnSelesai->setEnabled(false);
+    ui->btnResume->setVisible(false);
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(false);
+    ui->serialPortInfoListBox->setEnabled(false);
+
+    ui->labelTargetBebanVal->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(true);  //---->> untuk kirim target beban
+    ui->btnTera->setEnabled(true);                //---->> untuk reset timbangan
+    ui->btnResetEncoder->setEnabled(true);        //---->> untuk reset encoder
+
+    ui->teNama->setEnabled(false);
+    ui->btnAddNewMeasurement->setEnabled(false);
+
+    ui->btnDown->setEnabled(false);
+    ui->btnUp->setEnabled(false);
+    ui->btnStop->setEnabled(false);
+
+    ui->btnArrowLeftDL->setVisible(false);
+    ui->btnArrowRight->setVisible(false);
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modeRun()
+{
+    ui->btnPause->setVisible(true);  //----> untuk menSTOP operasi
+    ui->btnPause->setEnabled(true);  //----> untuk menSTOP operasi
+
+    ui->btnStart->setEnabled(false);
+    ui->btnSelesai->setEnabled(false);
+    ui->btnResume->setVisible(false);
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(false);
+    ui->serialPortInfoListBox->setEnabled(false);
+
+    ui->labelTargetBebanVal->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->btnTera->setEnabled(true);    //-------------->> u/ meng-0-kan timbangan
+    ui->btnResetEncoder->setEnabled(true); //----->> u/ reset encoder
+
+    ui->teNama->setEnabled(false);
+    ui->btnAddNewMeasurement->setEnabled(false);
+
+    ui->btnDown->setEnabled(true);  //--->>> kirim cmd down
+    ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
+    ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modePause()
+{
+    ui->btnPause->setVisible(false);
+    ui->btnPause->setEnabled(false);  //----> untuk menStart operasi
+
+    ui->btnStart->setEnabled(false);
+    ui->btnSelesai->setEnabled(true); //---->> untuk menyelesaikan operasi
+    ui->btnResume->setVisible(true); //----> untuk menST operasi
+    ui->btnResume->setEnabled(true); //----> untuk menStart operasi
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(false);
+    ui->serialPortInfoListBox->setEnabled(false);
+
+    ui->labelTargetBebanVal->setEnabled(true);   //---->> entry target beban
+    ui->btnTargetBebanRefresh->setEnabled(true); //entry target beban
+    ui->btnTera->setEnabled(true);               //-------------->> u/ meng-0-kan timbangan
+    ui->btnResetEncoder->setEnabled(true);       //----->> u/ reset encoder
+
+    ui->teNama->setEnabled(false);
+    ui->btnAddNewMeasurement->setEnabled(false);
+
+    ui->btnDown->setEnabled(true);  //--->>> kirim cmd down
+    ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
+    ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modeResume()
+{
+    ui->btnPause->setVisible(true);
+    ui->btnPause->setEnabled(true);  //----> untuk menSTOP operasi
+
+    ui->btnStart->setEnabled(false);
+    ui->btnSelesai->setEnabled(false);
+    ui->btnResume->setVisible(false);
+    ui->btnResume->setEnabled(false);
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(false);
+    ui->serialPortInfoListBox->setEnabled(false);
+
+    ui->labelTargetBebanVal->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->btnTera->setEnabled(false);
+    ui->btnResetEncoder->setEnabled(false);
+
+    ui->teNama->setEnabled(false);
+    ui->btnAddNewMeasurement->setEnabled(false);
+
+    ui->btnDown->setEnabled(true);  //--->>> kirim cmd down
+    ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
+    ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
+}
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void MainWindow::modeEnd()
+{
+    ui->btnPause->setVisible(false);
+    ui->btnPause->setEnabled(false);
+
+    ui->btnStart->setEnabled(true);    //--->> untuk memulai pengukuran baru
+    ui->btnStart->setVisible(true);    //--->> untuk memulai pengukuran baru
+
+    ui->btnSelesai->setEnabled(false);
+    ui->btnResume->setVisible(false);
+    ui->btnResume->setEnabled(false);
+
+    ui->btnTest->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(false);
+    ui->serialPortInfoListBox->setEnabled(false);
+
+    ui->labelTargetBebanVal->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->btnTera->setEnabled(false);
+    ui->btnResetEncoder->setEnabled(false);
+
+    ui->teNama->setEnabled(true);
+    ui->btnAddNewMeasurement->setEnabled(true);
+
+    ui->btnDown->setEnabled(false);
+    ui->btnUp->setEnabled(false);
+    ui->btnStop->setEnabled(false);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1277,38 +1471,11 @@ void MainWindow::realtimeDataSlot(QString value)
 ******************************************************************************************************/
 void MainWindow::on_btnRefreshSerialPort_clicked()
 {
-    // qDebug() << "start print >> ";
-    // printData();
-    // drawRealTime();
-    // qDebug() << "end print >> ";
 
     //showPortInfo(1);
     fillPortsInfo();
 
-
-    ui->btnPause->setEnabled(false);
-    ui->btnStart->setEnabled(true);
-    ui->btnDown->setEnabled(false);
-    ui->btnUp->setEnabled(false);
-    ui->btnRefreshSerialPort->setEnabled(false);
-    ui->btnOpen->setEnabled(false);
-    ui->btnTera->setEnabled(false);
-    ui->btnResetEncoder->setEnabled(false);
-    ui->btnTargetBebanRefresh->setEnabled(false);
-    ui->labelTargetBebanVal->setEnabled(false);
-    ui->btnSave->setEnabled(false);
-    ui->serialPortInfoListBox->setEnabled(true);
-    ui->btnSelesai->setEnabled(false);
-    ui->teNama->setEnabled(false);
-    ui->btnResume->setEnabled(false);
-    ui->btnResume->setVisible(false);
-
-    ui->btnPause->setVisible(false);
-    ui->btnStart->setVisible(true);
-    ui->btnSelesai->setVisible(true);
-    ui->btnSelesai->setEnabled(false);
-    ui->btnResume->setVisible(false);
-    ui->btnTest->setVisible(false);
+    modeLoadPort();
 }
 
 /*****************************************************************************************************
@@ -1323,10 +1490,6 @@ void MainWindow::on_btnStop_clicked()
     timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(true);
-
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 3; //stop
        quint8 mperintahAuto = 0;
@@ -1349,13 +1512,7 @@ void MainWindow::on_btnResume_clicked()
     timerProcessPayload->start(10);
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(true);
-       ui->btnSelesai->setEnabled(false);
-       ui->btnPause->setVisible(true);
-       ui->btnPause->setEnabled(true);
-       ui->btnResume->setVisible(false);
-
+       modeResume();
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
        quint8 mperintahAuto = 1; //start auto
@@ -1365,20 +1522,6 @@ void MainWindow::on_btnResume_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
-
-       ui->btnPause->setEnabled(true);
-       ui->btnStart->setEnabled(false);
-       ui->btnDown->setEnabled(false);
-       ui->btnUp->setEnabled(false);
-       ui->btnRefreshSerialPort->setEnabled(false);
-       ui->btnOpen->setEnabled(false);
-       ui->btnTera->setEnabled(false);
-       ui->btnResetEncoder->setEnabled(false);
-       ui->btnTargetBebanRefresh->setEnabled(false);
-       ui->labelTargetBebanVal->setEnabled(false);
-       ui->btnSave->setEnabled(false);
-       ui->serialPortInfoListBox->setEnabled(false);
-       ui->teNama->setEnabled(false);
     }
 }
 
@@ -1712,20 +1855,6 @@ void MainWindow::on_btnStart_clicked()
     m_rxBuffer.clear();
 
     startRcvUart = true;
-    //ui->btnStart->setText("STOP");
-    /*
-    QDateTime currentDateTime = QDateTime::currentDateTime();
-    QString strTanggal = currentDateTime.toString("dd");
-    QLocale indonesian(QLocale::Indonesian);
-    QString dayName = indonesian.toString(currentDateTime,"dddd");
-    QString namaBulan = indonesian.toString(currentDateTime, "MMMM");
-    //strTanggal.append(" ");
-    strTanggal.append(namaBulan);
-    //strTanggal.append(" ");
-
-    strTanggal.append(currentDateTime.toString("yyyy"));
-    strTanggal.append(currentDateTime.toString("hhmmss"));
-    */
 
     logFilePath = logDir.filePath(ui->teNama->toPlainText());// + "_" + strTanggal + ".csv");
     qDebug() << "Path " << logFilePath;
@@ -1733,29 +1862,7 @@ void MainWindow::on_btnStart_clicked()
     if(ui->serialPortInfoListBox->currentText() != ""){
        if(!init_port()) return;
        if(m_serial && m_serial->isOpen()){
-          //Disable all button, except StopFromRunning
-          ui->btnPause->setVisible(true);
-          ui->btnStart->setVisible(false);
-          ui->btnSelesai->setVisible(true);
-          ui->btnResume->setVisible(false);
-
-          ui->btnStart->setEnabled(false);
-          ui->btnPause->setEnabled(true);
-          ui->btnResume->setEnabled(false);
-          ui->btnDown->setEnabled(true);
-          ui->btnUp->setEnabled(true);
-          ui->btnRefreshSerialPort->setEnabled(true);
-          ui->btnOpen->setEnabled(false);
-          ui->btnTera->setEnabled(false);
-          ui->btnResetEncoder->setEnabled(false);
-          ui->btnTargetBebanRefresh->setEnabled(false);
-          ui->labelTargetBebanVal->setEnabled(false);
-          ui->btnSave->setEnabled(false);
-          ui->serialPortInfoListBox->setEnabled(false);
-          ui->btnSelesai->setEnabled(true);
-          ui->teNama->setEnabled(false);
-          ui->btnAddNewMeasurement->setEnabled(false);
-
+          modeStart();
           QTimer::singleShot(2000, this, [this](){
                 qDebug() << "Startn";
                 //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
@@ -2318,10 +2425,7 @@ void MainWindow::on_btnSelesai_clicked()
     timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setEnabled(false);
-       ui->btnPause->setVisible(true);
-
+       modeEnd();
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
        quint8 mperintahAuto = 3; //stop auto
@@ -2331,28 +2435,6 @@ void MainWindow::on_btnSelesai_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
-
-       ui->btnPause->setEnabled(false);
-       ui->btnPause->setVisible(false);
-
-       ui->btnResume->setVisible(false);
-       ui->btnResume->setEnabled(false);
-
-       ui->btnStart->setEnabled(true);
-       ui->btnStart->setVisible(true);
-
-       ui->btnDown->setEnabled(false);
-       ui->btnUp->setEnabled(false);
-       ui->btnRefreshSerialPort->setEnabled(false);
-       ui->btnOpen->setEnabled(true);
-       ui->btnTera->setEnabled(true);
-       ui->btnResetEncoder->setEnabled(true);
-       ui->btnTargetBebanRefresh->setEnabled(true);
-       ui->labelTargetBebanVal->setEnabled(false);
-       ui->btnSave->setEnabled(false);
-       ui->serialPortInfoListBox->setEnabled(false);
-       ui->teNama->setEnabled(true);
-       ui->btnAddNewMeasurement->setEnabled(true);
 
        ui->teNama->setText("");
     }
@@ -2369,9 +2451,7 @@ void MainWindow::on_btnPause_clicked()
     timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(false);
+       modePause();
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2383,26 +2463,7 @@ void MainWindow::on_btnPause_clicked()
                 mperintahAuto,
                 mupdateData);
 
-       ui->btnPause->setEnabled(false);
-       ui->btnPause->setVisible(false);
 
-       ui->btnStart->setEnabled(false);
-       ui->btnResume->setEnabled(true);
-       ui->btnResume->setVisible(true);
-
-       ui->btnDown->setEnabled(false);
-       ui->btnUp->setEnabled(false);
-       ui->btnRefreshSerialPort->setEnabled(false);
-       ui->btnOpen->setEnabled(false);
-       ui->btnTera->setEnabled(false);
-       ui->btnResetEncoder->setEnabled(false);
-       ui->btnTargetBebanRefresh->setEnabled(false);
-       ui->labelTargetBebanVal->setEnabled(false);
-       ui->btnSave->setEnabled(false);
-       ui->serialPortInfoListBox->setEnabled(false);
-       ui->btnSelesai->setEnabled(true);
-       ui->btnSelesai->setVisible(true);
-       ui->teNama->setEnabled(false);
     }
 }
 

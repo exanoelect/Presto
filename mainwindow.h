@@ -251,6 +251,15 @@ private:
     void setPlotView();
     void resetPlotView();
     bool setupPlotView;
+
+    //mode
+    void modeBegin();
+    void modeLoadPort();
+    void modeStart();
+    void modeRun();
+    void modePause();
+    void modeResume();
+    void modeEnd();
 };
 
 #endif // MAINWINDOW_H
