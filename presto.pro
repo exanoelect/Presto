@@ -27,14 +27,17 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    msglogout.cpp
 
 HEADERS += \
         mainwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    msglogout.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    msglogout.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

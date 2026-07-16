@@ -31,6 +31,7 @@
 #include <QElapsedTimer>
 #include <QFileDialog>
 #include <qcustomplot.h>
+#include <msglogout.h>
 
 #ifdef Q_OS_LINUX
     #define UART_PORT "ttyS0"  //"ttyUSB0" "COM5" "ttyUSB0"
@@ -159,6 +160,9 @@ private slots:
     void xAxis2Changed(QCPRange range);
     void yAxis2Changed(QCPRange range);
 
+    void onbtnYes_msgLogoutClicked();
+    void onbtnNo_msgLogoutClicked();
+
 private:
     Ui::MainWindow *ui;
     QString demoName;
@@ -254,6 +258,9 @@ private:
     void modePause();
     void modeResume();
     void modeEnd();
+
+    msglogout *mMsgLogout =  nullptr;
+
 };
 
 #endif // MAINWINDOW_H

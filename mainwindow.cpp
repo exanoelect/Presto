@@ -2548,8 +2548,31 @@ void MainWindow::on_btnSave_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnExit_clicked()
 {
-    qApp->quit();
+    //qApp->quit();
     // Alternatively: QCoreApplication::quit();
+    // Jika belum ada instance, buat baru
+    if (!mMsgLogout) {
+        qDebug() << "warningbox baru akan dicreate";
+        mMsgLogout = new msglogout(this);
+        connect(mMsgLogout, &msglogout::btnYesClicked, this, &MainWindow::onbtnYes_msgLogoutClicked);
+        connect(mMsgLogout, &msglogout::btnNoClicked, this, &MainWindow::onbtnNo_msgLogoutClicked);
+        connect(mMsgLogout, &QObject::destroyed, [=]() mutable {
+            qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
+            mMsgLogout = nullptr; // Set pointer to nullptr
+        });
+        mMsgLogout->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+        mMsgLogout->setAttribute(Qt::WA_TranslucentBackground);
+
+        mMsgLogout->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+        mMsgLogout->setAttribute(Qt::WA_TranslucentBackground);
+        mMsgLogout->setWindowModality(Qt::ApplicationModal);
+        mMsgLogout->setAttribute(Qt::WA_DeleteOnClose);
+        mMsgLogout->show();
+    } else {
+        // Jika sudah ada, kirim notifikasi
+        qDebug() << "warningbox udah dicreate";
+        //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
+    }
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -2631,8 +2654,17 @@ void MainWindow::yAxis2Changed(QCPRange range)
     ui->verticalScrollBar2->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
 
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::onbtnYes_msgLogoutClicked()
+{
+    qApp->quit();
+}
 
-
-
-
-
+void MainWindow::onbtnNo_msgLogoutClicked()
+{
+    qDebug() << "btn no msglog diklik";
+    //mMsgLogout =  nullptr;
+}
