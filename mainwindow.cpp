@@ -536,7 +536,7 @@ void MainWindow::modeBegin()
     ui->btnResetEncoder->setEnabled(false);
 
     ui->teNama->setEnabled(false);
-    ui->btnAddNewMeasurement->setEnabled(false);
+    ui->btnAddNewMeasurement->setEnabled(true);  //---->> entry pengukuran baru
 
     ui->btnDown->setEnabled(false);
     ui->btnUp->setEnabled(false);
@@ -581,13 +581,13 @@ void MainWindow::modeLoadPort()
 //---------------------------------------------------------------------------------------
 void MainWindow::modeStart()
 {
-    ui->btnPause->setVisible(false);
+    ui->btnPause->setVisible(true);  //untuk menSTOP
     ui->btnStart->setEnabled(false);
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
 
     ui->btnTest->setVisible(false);
-    ui->btnRefreshSerialPort->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true); //always enable
     ui->serialPortInfoListBox->setEnabled(false);
 
     ui->labelTargetBebanVal->setEnabled(false);
@@ -619,7 +619,7 @@ void MainWindow::modeRun()
     ui->btnResume->setVisible(false);
 
     ui->btnTest->setVisible(false);
-    ui->btnRefreshSerialPort->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true);
     ui->serialPortInfoListBox->setEnabled(false);
 
     ui->labelTargetBebanVal->setEnabled(false);
@@ -649,7 +649,7 @@ void MainWindow::modePause()
     ui->btnResume->setEnabled(true); //----> untuk menStart operasi
 
     ui->btnTest->setVisible(false);
-    ui->btnRefreshSerialPort->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true);
     ui->serialPortInfoListBox->setEnabled(false);
 
     ui->labelTargetBebanVal->setEnabled(true);   //---->> entry target beban
@@ -679,7 +679,7 @@ void MainWindow::modeResume()
     ui->btnResume->setEnabled(false);
 
     ui->btnTest->setVisible(false);
-    ui->btnRefreshSerialPort->setVisible(false);
+    ui->btnRefreshSerialPort->setVisible(true);
     ui->serialPortInfoListBox->setEnabled(false);
 
     ui->labelTargetBebanVal->setEnabled(false);
@@ -711,8 +711,8 @@ void MainWindow::modeEnd()
     ui->btnResume->setEnabled(false);
 
     ui->btnTest->setVisible(false);
-    ui->btnRefreshSerialPort->setVisible(false);
-    ui->serialPortInfoListBox->setEnabled(false);
+    ui->btnRefreshSerialPort->setVisible(true);  //--->> refresh port
+    ui->serialPortInfoListBox->setEnabled(true); //--->> untuk memilih port
 
     ui->labelTargetBebanVal->setEnabled(false);
     ui->btnTargetBebanRefresh->setEnabled(false);
@@ -2557,6 +2557,10 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
 {
     ui->teNama->setText(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
     ui->teNama->setEnabled(true);
+
+    ui->labelLoadValue->setText("0.0000");
+    ui->labelDisplacementValue->setText("0.0000");
+    ui->labelStopWatch->setText("00:00:00");
 }
 
 /*****************************************************************************************************

@@ -184,12 +184,6 @@ private:
     int widthScreen;
     int heightScreen;
 
-    //Download files
-    //QListWidget *fileListWidget;
-    //QPushButton *btnShowFiles;
-    //QPushButton *btnDownload;
-    //QString sourceFolderPath;
-
     void setupPlotmm();
     void setupPlotTs();
 
