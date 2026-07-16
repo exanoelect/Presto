@@ -557,6 +557,7 @@ void MainWindow::modeBegin()
     m_packetQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
+    ui->teNama->setText("");
 }
 
 //---------------------------------------------------------------------------------------
@@ -598,21 +599,23 @@ void MainWindow::modeStart()
 {
     qDebug() << "mode start";
 
-    ui->btnPause->setVisible(false);  //untuk menSTOP
-    ui->btnStart->setEnabled(true);
+    ui->btnPause->setVisible(false);
+    ui->btnStart->setEnabled(true);  //u/ start
+    ui->btnStart->setVisible(true);   //u/ start
+
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
 
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true); //always enable
-    ui->serialPortInfoListBox->setEnabled(false);
+    ui->serialPortInfoListBox->setEnabled(true); //always enable
 
     ui->labelTargetBebanVal->setEnabled(false);
     ui->btnTargetBebanRefresh->setEnabled(true);  //---->> untuk kirim target beban
     ui->btnTera->setEnabled(true);                //---->> untuk reset timbangan
     ui->btnResetEncoder->setEnabled(true);        //---->> untuk reset encoder
 
-    ui->teNama->setEnabled(false);
+    ui->teNama->setEnabled(true);
     ui->btnAddNewMeasurement->setEnabled(false);
 
     ui->btnDown->setEnabled(false);
@@ -642,6 +645,8 @@ void MainWindow::modeRunning()
     ui->btnPause->setEnabled(true);  //----> untuk menSTOP operasi
 
     ui->btnStart->setEnabled(false);
+    ui->btnStart->setVisible(false);
+
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
 
@@ -1511,6 +1516,7 @@ void MainWindow::on_btnRefreshSerialPort_clicked()
     fillPortsInfo();
 
     modeLoadPort();
+    modeStart();
 }
 
 /*****************************************************************************************************
@@ -1896,7 +1902,15 @@ void MainWindow::on_btnStart_clicked()
     qDebug() << "Path " << logFilePath;
 
     if(ui->serialPortInfoListBox->currentText() != ""){
-       if(!init_port()) return;
+       if(!init_port()){
+           return;
+       }else{
+           QMessageBox::warning(this,"Peringatan","PORT gagal dibuka");
+       }
+       if(ui->teNama->toPlainText().isEmpty()){
+           QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+               return;
+       }
        if(m_serial && m_serial->isOpen()){
           modeRunning();
           QTimer::singleShot(2000, this, [this](){
@@ -1923,7 +1937,9 @@ void MainWindow::on_btnStart_clicked()
                          mupdateData);
                });
            }
-       }
+    }else{
+        QMessageBox::warning(this,"Peringatan","Pilih COM Port dulu!");
+    }
 }
 
 /*****************************************************************************************************

@@ -33,6 +33,7 @@
 #include <qcustomplot.h>
 #include <msglogout.h>
 #include <msgendukur.h>
+#include <QMessageBox>
 
 //color label batas atas bawah background-color: #14A0F1;
 
