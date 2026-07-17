@@ -615,8 +615,8 @@ void MainWindow::modeStart()
     ui->btnTera->setEnabled(true);                //---->> untuk reset timbangan
     ui->btnResetEncoder->setEnabled(true);        //---->> untuk reset encoder
 
-    ui->teNama->setEnabled(true);
-    ui->btnAddNewMeasurement->setEnabled(false);
+    ui->teNama->setEnabled(true);                 //---> utk entry file name
+    ui->btnAddNewMeasurement->setEnabled(true);   //---> utk entry file name
 
     ui->btnDown->setEnabled(false);
     ui->btnUp->setEnabled(false);
@@ -1903,13 +1903,12 @@ void MainWindow::on_btnStart_clicked()
 
     if(ui->serialPortInfoListBox->currentText() != ""){
        if(!init_port()){
-           return;
-       }else{
            QMessageBox::warning(this,"Peringatan","PORT gagal dibuka");
+           return;
        }
        if(ui->teNama->toPlainText().isEmpty()){
            QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-               return;
+           return;
        }
        if(m_serial && m_serial->isOpen()){
           modeRunning();
