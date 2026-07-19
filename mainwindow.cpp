@@ -736,7 +736,7 @@ void MainWindow::modeRunning()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit6.png);""}");
     ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open4.png);""}");
 
 
@@ -774,7 +774,7 @@ void MainWindow::modePaused()
     ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
     ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
     ui->btnSelesai->setEnabled(true);
-    ui->btnExit->setEnabled(false);
+    //ui->btnExit->setEnabled(false);
 
     ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
     ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
@@ -789,7 +789,7 @@ void MainWindow::modePaused()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+    //ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 }
@@ -817,7 +817,7 @@ void MainWindow::modeResumed()
     ui->btnTargetBebanRefresh->setEnabled(false);
     ui->btnTera->setEnabled(false);
     ui->btnResetEncoder->setEnabled(false);
-    ui->btnExit->setEnabled(false);
+   // ui->btnExit->setEnabled(false);
 
     ui->teNama->setEnabled(false);
     ui->btnAddNewMeasurement->setEnabled(false);
@@ -838,7 +838,7 @@ void MainWindow::modeResumed()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+  //  ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 
