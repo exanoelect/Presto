@@ -552,12 +552,31 @@ void MainWindow::modeBegin()
     ui->horizontalScrollBar->setVisible(false);
     ui->horizontalScrollBar2->setVisible(false);
 
+    ui->btnExit->setEnabled(true);
+
     clearGraph();
     dataLoad.clear();
     m_packetQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
     ui->teNama->setText("");
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai4.png);""}");
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
+    ui->btnSave->setStyleSheet("QPushButton {""border-image: url(:/save4.png);""}");
 }
 
 //---------------------------------------------------------------------------------------
@@ -590,6 +609,25 @@ void MainWindow::modeLoadPort()
 
     ui->btnArrowLeftDL->setVisible(false);
     ui->btnArrowRight->setVisible(false);
+
+    ui->btnExit->setEnabled(true);
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai4.png);""}");
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -611,9 +649,9 @@ void MainWindow::modeStart()
     ui->serialPortInfoListBox->setEnabled(true); //always enable
 
     ui->labelTargetBebanVal->setEnabled(false);
-    ui->btnTargetBebanRefresh->setEnabled(true);  //---->> untuk kirim target beban
-    ui->btnTera->setEnabled(true);                //---->> untuk reset timbangan
-    ui->btnResetEncoder->setEnabled(true);        //---->> untuk reset encoder
+    ui->btnTargetBebanRefresh->setEnabled(false);  //---->> untuk kirim target beban
+    ui->btnTera->setEnabled(false);                //---->> untuk reset timbangan
+    ui->btnResetEncoder->setEnabled(false);        //---->> untuk reset encoder
 
     ui->teNama->setEnabled(true);                 //---> utk entry file name
     ui->btnAddNewMeasurement->setEnabled(true);   //---> utk entry file name
@@ -625,13 +663,30 @@ void MainWindow::modeStart()
     ui->btnArrowLeftDL->setVisible(false);
     ui->btnArrowRight->setVisible(false);
 
-    ui->btnExit->setEnabled(false);
+    ui->btnExit->setEnabled(true);
 
     clearGraph();
     dataLoad.clear();
     m_packetQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai1.png);""}");   //--------------------
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");    //--------------------
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -649,6 +704,7 @@ void MainWindow::modeRunning()
 
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
+    ui->btnExit->setEnabled(false);
 
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true);
@@ -661,10 +717,30 @@ void MainWindow::modeRunning()
 
     ui->teNama->setEnabled(false);
     ui->btnAddNewMeasurement->setEnabled(false);
+    ui->btnExit->setEnabled(false);
+    ui->btnOpen->setEnabled(false);
 
     ui->btnDown->setEnabled(true);  //--->>> kirim cmd down
     ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
     ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause.png);""}");  //--------------------------
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai4.png);""}");   //--------------------
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");    //--------------------
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");  //--------------------
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+    ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open4.png);""}");
+
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 }
 
 //---------------------------------------------------------------------------------------
@@ -697,6 +773,25 @@ void MainWindow::modePaused()
     ui->btnDown->setEnabled(true);  //--->>> kirim cmd down
     ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
     ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
+    ui->btnSelesai->setEnabled(true);
+    ui->btnExit->setEnabled(false);
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai4.png);""}");   //--------------------
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai.png);""}");   //--------------------
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");    //--------------------
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");  //--------------------
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 }
 
 //---------------------------------------------------------------------------------------
@@ -722,6 +817,7 @@ void MainWindow::modeResumed()
     ui->btnTargetBebanRefresh->setEnabled(false);
     ui->btnTera->setEnabled(false);
     ui->btnResetEncoder->setEnabled(false);
+    ui->btnExit->setEnabled(false);
 
     ui->teNama->setEnabled(false);
     ui->btnAddNewMeasurement->setEnabled(false);
@@ -729,6 +825,23 @@ void MainWindow::modeResumed()
     ui->btnDown->setEnabled(true);  //--->>> kirim cmd down
     ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
     ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause.png);""}");  //--------------------------
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai4.png);""}");   //--------------------
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");    //--------------------
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");  //--------------------
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -741,7 +854,7 @@ void MainWindow::modeEnd()
     ui->btnPause->setVisible(false);
     ui->btnPause->setEnabled(false);
 
-    ui->btnStart->setEnabled(false);
+    ui->btnStart->setEnabled(true);
     ui->btnStart->setVisible(true);
 
     ui->btnSelesai->setEnabled(false);
@@ -753,9 +866,9 @@ void MainWindow::modeEnd()
     ui->serialPortInfoListBox->setEnabled(true); //--->> untuk memilih port
 
     ui->labelTargetBebanVal->setEnabled(false);
-    ui->btnTargetBebanRefresh->setEnabled(false);
-    ui->btnTera->setEnabled(false);
-    ui->btnResetEncoder->setEnabled(false);
+    ui->btnTargetBebanRefresh->setEnabled(true);
+    ui->btnTera->setEnabled(true);
+    ui->btnResetEncoder->setEnabled(true);
 
     ui->teNama->setEnabled(true);
     ui->btnAddNewMeasurement->setEnabled(true);
@@ -765,6 +878,22 @@ void MainWindow::modeEnd()
     ui->btnStop->setEnabled(false);
 
     ui->btnExit->setEnabled(true);
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/arrowcircle1.png);""}");
+    ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
+    ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
+    ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
+    ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai1.png);""}");   //--------------------
+
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");    //--------------------
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");  //--------------------
+    //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");  //------------
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}"); //--------------
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}"); //---------------
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+
+    ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
 }
 
 //---------------------------------------------------------------------------------------
@@ -1996,11 +2125,13 @@ void MainWindow::on_btnStart_released()
 ******************************************************************************************************/
 void MainWindow::on_btnRefreshSerialPort_pressed()
 {
-    ui->btnRefreshSerialPort->setStyleSheet(
+    /*ui->btnRefreshSerialPort->setStyleSheet(
         "QPushButton {"
         "border-image: url(:/circle2.png);"
         "}"
-    );
+    );*/
+
+    ui->btnRefreshSerialPort->setStyleSheet("QPushButton {""border-image: url(:/circle2.png);""}");
 }
 
 void MainWindow::on_btnRefreshSerialPort_released()
@@ -2119,11 +2250,13 @@ void MainWindow::on_btnArrowLeftDL_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnTargetBebanRefresh_pressed()
 {
-    ui->btnTargetBebanRefresh->setStyleSheet(
+    /*ui->btnTargetBebanRefresh->setStyleSheet(
         "QPushButton {"
         "border-image: url(:/arrowcircle2.png);"
         "}"
-    );
+    );*/
+
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/arrowcircle2.png);""}");
 }
 
 /*****************************************************************************************************
@@ -2661,8 +2794,14 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
     ui->labelDisplacementValue->setText("0.0000");
     ui->labelStopWatch->setText("00:00:00");
 
-    ui->btnStart->setEnabled(true);
-    modeStart();
+    //ui->btnStart->setEnabled(true);
+    //modeStart();
+
+    clearGraph();
+    dataLoad.clear();
+    m_packetQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 }
 
 /*****************************************************************************************************

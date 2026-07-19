@@ -42,5 +42,19 @@
         <file>stop4.png</file>
         <file>no.png</file>
         <file>yes.png</file>
+        <file>down4.png</file>
+        <file>mulai4.png</file>
+        <file>open4.png</file>
+        <file>pause4.png</file>
+        <file>refresh4.png</file>
+        <file>resume4.png</file>
+        <file>save4.png</file>
+        <file>selesai4.png</file>
+        <file>stop5.png</file>
+        <file>up4.png</file>
+        <file>zero4.png</file>
+        <file>add4.png</file>
+        <file>exit4.png</file>
+        <file>exit6.png</file>
     </qresource>
 </RCC>

@@ -927,7 +927,7 @@ font: 72pt &quot;MS Shell Dlg 2&quot;;</string>
       <string notr="true">border-image: url(:/zero1.png);</string>
      </property>
      <property name="text">
-      <string>tera</string>
+      <string/>
      </property>
     </widget>
     <widget class="QLabel" name="labelLoadKg">
