@@ -648,17 +648,17 @@ void MainWindow::modeStart()
     ui->btnRefreshSerialPort->setVisible(true); //always enable
     ui->serialPortInfoListBox->setEnabled(true); //always enable
 
-    ui->labelTargetBebanVal->setEnabled(false);
-    ui->btnTargetBebanRefresh->setEnabled(false);  //---->> untuk kirim target beban
-    ui->btnTera->setEnabled(false);                //---->> untuk reset timbangan
-    ui->btnResetEncoder->setEnabled(false);        //---->> untuk reset encoder
+    ui->labelTargetBebanVal->setEnabled(true);
+    ui->btnTargetBebanRefresh->setEnabled(true);  //---->> untuk kirim target beban
+    ui->btnTera->setEnabled(true);                //---->> untuk reset timbangan
+    ui->btnResetEncoder->setEnabled(true);        //---->> untuk reset encoder
 
     ui->teNama->setEnabled(true);                 //---> utk entry file name
     ui->btnAddNewMeasurement->setEnabled(true);   //---> utk entry file name
 
-    ui->btnDown->setEnabled(false);
-    ui->btnUp->setEnabled(false);
-    ui->btnStop->setEnabled(false);
+    ui->btnDown->setEnabled(true);
+    ui->btnUp->setEnabled(true);
+    ui->btnStop->setEnabled(true);
 
     ui->btnArrowLeftDL->setVisible(false);
     ui->btnArrowRight->setVisible(false);
@@ -677,12 +677,12 @@ void MainWindow::modeStart()
     ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
     ui->btnStart->setStyleSheet("QPushButton {""border-image: url(:/mulai1.png);""}");   //--------------------
 
-    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");    //--------------------
-    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
+    ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");    //--------------------
+    ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");
     //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
-    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
-    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
-    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}");
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}");
     ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
@@ -1437,6 +1437,72 @@ bool MainWindow::init_port()
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
 ******************************************************************************************************/
+bool MainWindow::initPortForce()
+{
+    // Periksa apakah port sudah diinisialisasi dan terbuka
+    if (m_serial && m_serial->isOpen()) {
+        qDebug() << "Port eksis, close....";
+        m_serial->close();
+        //return true;
+    }
+
+    // Jika sudah ada instance `m_serial`, hapus untuk mencegah kebocoran memori
+    if (m_serial) {
+        delete m_serial;
+        m_serial = nullptr;
+    }
+
+    // Buat instance QSerialPort baru
+    m_serial = new QSerialPort(ui->serialPortInfoListBox->currentText()); //(UART_PORT);
+
+    // Konfigurasi serial port
+    m_serial->setPortName(ui->serialPortInfoListBox->currentText());
+    m_serial->setBaudRate(QSerialPort::Baud115200);
+    m_serial->setFlowControl(QSerialPort::NoFlowControl);
+    m_serial->setParity(QSerialPort::NoParity);
+    m_serial->setDataBits(QSerialPort::Data8);
+    m_serial->setStopBits(QSerialPort::OneStop);
+
+    // Cek apakah port berhasil dibuka
+    if (!m_serial->open(QIODevice::ReadWrite)) {
+
+        //if (!warningShown) {
+        //    uartdcwarning(); // Tampilkan peringatan hanya sekali
+        //    warningShown = true;
+        //}
+
+        qDebug() << "Failed to open port:" << m_serial->errorString();
+        QMessageBox::warning(this,"Open PORT ERROR",m_serial->errorString());
+        delete m_serial; // Hapus instance karena tidak digunakan
+        m_serial = nullptr;
+        return false;
+    } else {
+        qDebug() << "Open Port OK";
+
+        // Reset status warning
+        //warningShown = false;
+
+        // Hubungkan sinyal ke slot
+        connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readData);
+        connect(m_serial, &QSerialPort::errorOccurred, this, &MainWindow::handleError);
+
+        // Reset status header
+        headerFound = false;
+
+        ui->btnStop->setEnabled(true);
+        ui->btnRefreshSerialPort->setEnabled(false);
+
+        ui->btnTera->setEnabled(true);
+        ui->btnStart->setEnabled(true);
+        startRcvUart = false;
+        return true;
+    }
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
 void MainWindow::closeSerialPort()
 {
     if(m_serial){
@@ -1658,6 +1724,11 @@ void MainWindow::on_btnStop_clicked()
     //qDebug() << "CLOSED UART------------------------------------------";
     timerStopWatch->stop();
     timerProcessPayload->stop();
+
+    if(ui->teNama->toPlainText().isEmpty()){
+        QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+        return;
+    }
 
     if(m_serial && m_serial->isOpen()){
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
@@ -2031,10 +2102,10 @@ void MainWindow::on_btnStart_clicked()
     qDebug() << "Path " << logFilePath;
 
     if(ui->serialPortInfoListBox->currentText() != ""){
-       if(!init_port()){
-           QMessageBox::warning(this,"Peringatan","PORT gagal dibuka");
-           return;
-       }
+      // if(!init_port()){
+      //     QMessageBox::warning(this,"Peringatan","PORT gagal dibuka");
+      //     return;
+      // }
        if(ui->teNama->toPlainText().isEmpty()){
            QMessageBox::warning(this,"Peringatan","isi nama file dulu");
            return;
@@ -2149,6 +2220,11 @@ void MainWindow::on_btnRefreshSerialPort_released()
 ******************************************************************************************************/
 void MainWindow::on_btnDown_clicked()
 {
+    if(ui->teNama->toPlainText().isEmpty()){
+        QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+        return;
+    }
+
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
        ui->btnSelesai->setVisible(true);
@@ -2173,6 +2249,11 @@ void MainWindow::on_btnDown_clicked()
 
 void MainWindow::on_btnUp_clicked()
 {
+    if(ui->teNama->toPlainText().isEmpty()){
+        QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+        return;
+    }
+
     if(m_serial && m_serial->isOpen()){
        ui->btnStart->setVisible(false);
        ui->btnSelesai->setVisible(true);
@@ -2917,4 +2998,11 @@ void MainWindow::onbtnYes_msgEndUkurClicked()
 void MainWindow::onbtnNo_msgEndUkurClicked()
 {
     modePaused();
+}
+
+//------------------------------------------------------------------------------------
+void MainWindow::on_serialPortInfoListBox_currentTextChanged(const QString &arg1)
+{
+    qDebug() << "CB text changed " << arg1;
+    initPortForce();
 }

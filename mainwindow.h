@@ -72,6 +72,7 @@ public:
 
 private slots:
     bool init_port();
+    bool initPortForce();
     void closeSerialPort();
     void readData();
     void handleError(QSerialPort::SerialPortError error);
@@ -169,6 +170,8 @@ private slots:
 
     void onbtnYes_msgEndUkurClicked();
     void onbtnNo_msgEndUkurClicked();
+
+    void on_serialPortInfoListBox_currentTextChanged(const QString &arg1);
 
 private:
     Ui::MainWindow *ui;
