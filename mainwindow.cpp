@@ -879,7 +879,7 @@ void MainWindow::modeEnd()
 
     ui->btnExit->setEnabled(true);
 
-    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/arrowcircle1.png);""}");
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
     ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
     ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
     ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
@@ -2226,9 +2226,9 @@ void MainWindow::on_btnDown_clicked()
     }
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
+       ui->btnStart->setVisible(true);
        ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(true);
+       ui->btnPause->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 2; //turun
@@ -2255,9 +2255,9 @@ void MainWindow::on_btnUp_clicked()
     }
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
+       ui->btnStart->setVisible(true);
        ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(true);
+       ui->btnPause->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 1; //naik
@@ -2337,7 +2337,7 @@ void MainWindow::on_btnTargetBebanRefresh_pressed()
         "}"
     );*/
 
-    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/arrowcircle2.png);""}");
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh2.png);""}");
 }
 
 /*****************************************************************************************************
@@ -2348,7 +2348,7 @@ void MainWindow::on_btnTargetBebanRefresh_released()
 {
     ui->btnTargetBebanRefresh->setStyleSheet(
         "QPushButton {"
-        "border-image: url(:/arrowcircle1.png);"
+        "border-image: url(:/refresh1.png);"
         "}"
     );
 }
