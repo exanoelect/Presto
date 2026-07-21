@@ -16,8 +16,6 @@
         <file>up1.png</file>
         <file>mulai2.png</file>
         <file>mulai1.png</file>
-        <file>arrowcircle2.png</file>
-        <file>arrowcircle1.png</file>
         <file>stop2.png</file>
         <file>stop1.png</file>
         <file>save1.png</file>
@@ -56,5 +54,7 @@
         <file>add4.png</file>
         <file>exit4.png</file>
         <file>exit6.png</file>
+        <file>refresh1.png</file>
+        <file>refresh2.png</file>
     </qresource>
 </RCC>

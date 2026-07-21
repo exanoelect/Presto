@@ -1003,7 +1003,7 @@ font: 32pt &quot;.AppleSystemUIFont&quot;;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">border-image: url(:/arrowcircle1.png);</string>
+      <string notr="true">border-image: url(:/refresh1.png);</string>
      </property>
      <property name="text">
       <string/>

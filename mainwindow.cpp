@@ -527,9 +527,12 @@ void MainWindow::modeBegin()
     ui->btnStart->setEnabled(false);
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
+    ui->btnOpen->setEnabled(true);
 
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true);  //----->> cuma ini yg aktif dulu
+    ui->btnRefreshSerialPort->setEnabled(true);  //----->> cuma ini yg aktif dulu
+
     ui->serialPortInfoListBox->setEnabled(true);
 
     ui->labelTargetBebanVal->setEnabled(true);   //----- untuk entry target beban
@@ -577,6 +580,11 @@ void MainWindow::modeBegin()
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
     ui->btnSave->setStyleSheet("QPushButton {""border-image: url(:/save4.png);""}");
+    ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open1.png);""}");
+
+    ui->btnRefreshSerialPort->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
+
+    ui->serialPortInfoListBox->clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -640,12 +648,15 @@ void MainWindow::modeStart()
     ui->btnPause->setVisible(false);
     ui->btnStart->setEnabled(true);  //u/ start
     ui->btnStart->setVisible(true);   //u/ start
+    ui->btnOpen->setEnabled(false);
 
     ui->btnSelesai->setEnabled(false);
     ui->btnResume->setVisible(false);
 
     ui->btnTest->setVisible(false);
     ui->btnRefreshSerialPort->setVisible(true); //always enable
+    ui->btnRefreshSerialPort->setEnabled(true); //always enable
+
     ui->serialPortInfoListBox->setEnabled(true); //always enable
 
     ui->labelTargetBebanVal->setEnabled(true);
@@ -671,7 +682,7 @@ void MainWindow::modeStart()
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
 
-    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
     ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");
     ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
     ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume4.png);""}");
@@ -686,6 +697,8 @@ void MainWindow::modeStart()
     ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
+    ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open4.png);""}");
+    ui->btnRefreshSerialPort->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
 
 }
 
@@ -776,7 +789,7 @@ void MainWindow::modePaused()
     ui->btnSelesai->setEnabled(true);
     //ui->btnExit->setEnabled(false);
 
-    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh4.png);""}");
+    ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
     ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
     ui->btnSelesai->setStyleSheet("QPushButton {""border-image: url(:/selesai4.png);""}");
     ui->btnResume->setStyleSheet("QPushButton {""border-image: url(:/resume.png);""}");
@@ -873,11 +886,12 @@ void MainWindow::modeEnd()
     ui->teNama->setEnabled(true);
     ui->btnAddNewMeasurement->setEnabled(true);
 
-    ui->btnDown->setEnabled(false);
-    ui->btnUp->setEnabled(false);
-    ui->btnStop->setEnabled(false);
+    ui->btnDown->setEnabled(true);
+    ui->btnUp->setEnabled(true);
+    ui->btnStop->setEnabled(true);
 
     ui->btnExit->setEnabled(true);
+    ui->btnOpen->setEnabled(true);
 
     ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
     ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
@@ -888,12 +902,13 @@ void MainWindow::modeEnd()
     ui->btnTera->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");    //--------------------
     ui->btnResetEncoder->setStyleSheet("QPushButton {""border-image: url(:/zero1.png);""}");  //--------------------
     //ui->teNama->setStyleSheet("QPushButton {""border-image: url(:/zero4.png);""}");
-    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");  //------------
-    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}"); //--------------
-    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}"); //---------------
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+    ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
+    ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
+    ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit1.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
+    ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open1.png);""}");
 }
 
 //---------------------------------------------------------------------------------------
@@ -1636,13 +1651,20 @@ void MainWindow::readData()
 ******************************************************************************************************/
 void MainWindow::handleError(QSerialPort::SerialPortError error)
 {
-    if (error == QSerialPort::NoError) return; // Abaikan jika tidak ada error
+    if (error == QSerialPort::NoError) {
+        return; // Abaikan jika tidak ada error
+    }
 
     qDebug() << "Serial port error occurred:" << m_serial->errorString();
+    QMessageBox::warning(this,"Open PORT ERROR",m_serial->errorString());
 
-    if (error == QSerialPort::NoError || !m_serial) return; // Abaikan jika tidak ada error atau m_serial null
+    if (error == QSerialPort::NoError || !m_serial) {
+        QMessageBox::warning(this,"Open PORT ERROR",m_serial->errorString());
+        return; // Abaikan jika tidak ada error atau m_serial null
+    }
 
     qDebug() << "Serial port error occurred:" << m_serial->errorString();
+    QMessageBox::warning(this,"Open PORT ERROR",m_serial->errorString());
 
     // Tutup port untuk memastikan tidak digunakan lagi
     m_serial->close();
@@ -1651,6 +1673,8 @@ void MainWindow::handleError(QSerialPort::SerialPortError error)
     m_serial->deleteLater();
     m_serial = nullptr;
     counter = 0;
+
+    modeBegin();
 }
 
 /*****************************************************************************************************
@@ -1722,13 +1746,13 @@ void MainWindow::on_btnStop_clicked()
 {
     //closeSerialPort();
     //qDebug() << "CLOSED UART------------------------------------------";
-    timerStopWatch->stop();
-    timerProcessPayload->stop();
+    //if(timerStopWatch->isActive()) timerStopWatch->stop();
+    //if(timerProcessPayload->isActive()) timerProcessPayload->stop();
 
-    if(ui->teNama->toPlainText().isEmpty()){
-        QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-        return;
-    }
+   // if(ui->teNama->toPlainText().isEmpty()){
+   //     QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+   //     return;
+   // }
 
     if(m_serial && m_serial->isOpen()){
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
@@ -1740,6 +1764,8 @@ void MainWindow::on_btnStop_clicked()
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
+    }else{
+
     }
 }
 
@@ -1983,9 +2009,9 @@ void MainWindow::on_serialPortInfoListBox_activated(const QString &arg1)
 void MainWindow::on_btnTera_clicked()
 {
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(true);
+       //ui->btnStart->setVisible(false);
+       //ui->btnSelesai->setVisible(true);
+       //ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2010,9 +2036,9 @@ void MainWindow::on_btnTera_clicked()
 void MainWindow::on_btnResetEncoder_clicked()
 {
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(true);
+      // ui->btnStart->setVisible(false);
+      // ui->btnSelesai->setVisible(true);
+      // ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
@@ -2220,15 +2246,15 @@ void MainWindow::on_btnRefreshSerialPort_released()
 ******************************************************************************************************/
 void MainWindow::on_btnDown_clicked()
 {
-    if(ui->teNama->toPlainText().isEmpty()){
-        QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-        return;
-    }
+    //if(ui->teNama->toPlainText().isEmpty()){
+    //    QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+    //    return;
+    //}
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(true);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(false);
+       //ui->btnStart->setVisible(true);
+       //ui->btnSelesai->setVisible(true);
+       //ui->btnPause->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 2; //turun
@@ -2249,15 +2275,15 @@ void MainWindow::on_btnDown_clicked()
 
 void MainWindow::on_btnUp_clicked()
 {
-    if(ui->teNama->toPlainText().isEmpty()){
-        QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-        return;
-    }
+    //if(ui->teNama->toPlainText().isEmpty()){
+    //    QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+    //    return;
+    //}
 
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(true);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(false);
+       //ui->btnStart->setVisible(true);
+       //ui->btnSelesai->setVisible(true);
+       //ui->btnPause->setVisible(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 1; //naik
@@ -2636,9 +2662,9 @@ void MainWindow::on_btnAddNewMeasurement_released()
 void MainWindow::on_btnTargetBebanRefresh_clicked()
 {
     if(m_serial && m_serial->isOpen()){
-       ui->btnStart->setVisible(false);
-       ui->btnSelesai->setVisible(true);
-       ui->btnPause->setVisible(true);
+       //ui->btnStart->setVisible(false);
+       //ui->btnSelesai->setVisible(true);
+       //ui->btnPause->setVisible(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
