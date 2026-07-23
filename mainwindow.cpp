@@ -905,7 +905,7 @@ void MainWindow::modeEnd()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit1.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
     ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open1.png);""}");
