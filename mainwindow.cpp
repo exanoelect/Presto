@@ -787,6 +787,7 @@ void MainWindow::modePaused()
     ui->btnUp->setEnabled(true);    //--->>> kirim cmd stop
     ui->btnStop->setEnabled(true);  //--->>> kirim cmd up
     ui->btnSelesai->setEnabled(true);
+    ui->btnExit->setEnabled(true);
     //ui->btnExit->setEnabled(false);
 
     ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
@@ -802,7 +803,7 @@ void MainWindow::modePaused()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down1.png);""}");  //------------
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
-    //ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 }
@@ -830,7 +831,7 @@ void MainWindow::modeResumed()
     ui->btnTargetBebanRefresh->setEnabled(false);
     ui->btnTera->setEnabled(false);
     ui->btnResetEncoder->setEnabled(false);
-   // ui->btnExit->setEnabled(false);
+    ui->btnExit->setEnabled(false);
 
     ui->teNama->setEnabled(false);
     ui->btnAddNewMeasurement->setEnabled(false);
@@ -851,7 +852,7 @@ void MainWindow::modeResumed()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");  //------------
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}"); //--------------
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}"); //---------------
-  //  ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit5.png);""}");
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit6.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 
@@ -892,6 +893,7 @@ void MainWindow::modeEnd()
 
     ui->btnExit->setEnabled(true);
     ui->btnOpen->setEnabled(true);
+    ui->btnSave->setEnabled(true);
 
     ui->btnTargetBebanRefresh->setStyleSheet("QPushButton {""border-image: url(:/refresh1.png);""}");
     ui->btnPause->setStyleSheet("QPushButton {""border-image: url(:/pause4.png);""}");  //--------------------------
@@ -906,6 +908,7 @@ void MainWindow::modeEnd()
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up1.png);""}"); //--------------
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop3.png);""}"); //---------------
     ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+    ui->btnSave->setStyleSheet("QPushButton {""border-image: url(:/save1.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
     ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open1.png);""}");
@@ -1755,6 +1758,9 @@ void MainWindow::on_btnStop_clicked()
    // }
 
     if(m_serial && m_serial->isOpen()){
+
+       if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 3; //stop
        quint8 mperintahAuto = 0;
@@ -2256,6 +2262,8 @@ void MainWindow::on_btnDown_clicked()
        //ui->btnSelesai->setVisible(true);
        //ui->btnPause->setVisible(false);
 
+       if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
+
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 2; //turun
        quint8 mperintahAuto = 0;
@@ -2284,6 +2292,8 @@ void MainWindow::on_btnUp_clicked()
        //ui->btnStart->setVisible(true);
        //ui->btnSelesai->setVisible(true);
        //ui->btnPause->setVisible(false);
+
+       if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 1; //naik
@@ -2992,7 +3002,8 @@ void MainWindow::onbtnNo_msgLogoutClicked()
 {
     qDebug() << "btn no msglog diklik";
     //mMsgLogout =  nullptr;
-    modeLoadPort();
+    //modeLoadPort();
+    modeStart();
 }
 
 /*****************************************************************************************************
