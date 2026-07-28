@@ -1781,8 +1781,8 @@ void MainWindow::on_btnStop_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnResume_clicked()
 {
-    timerStopWatch->start(10);
-    timerProcessPayload->start(10);
+    if(!timerStopWatch->isActive()) timerStopWatch->start(10);
+    if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
 
     if(m_serial && m_serial->isOpen()){
        modeResumed();
@@ -2154,8 +2154,8 @@ void MainWindow::on_btnStart_clicked()
                 elapsedTimer.start();      // mulai stopwatch
 
                 //elapsedTimer.restart();
-                timerStopWatch->start(10);
-                timerProcessPayload->start(10);
+                if(!timerStopWatch->isActive()) timerStopWatch->start(10);
+                if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
 
                 float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
                 quint8 mperintahManual = 0;
@@ -2773,8 +2773,8 @@ void MainWindow::on_btnSelesai_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnPause_clicked()
 {
-    timerStopWatch->stop();
-    timerProcessPayload->stop();
+    if(timerStopWatch->isActive()) timerStopWatch->stop();
+    if(timerProcessPayload->isActive()) timerProcessPayload->stop();
 
     if(m_serial && m_serial->isOpen()){
        modePaused();
