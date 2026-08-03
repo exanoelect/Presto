@@ -25,7 +25,9 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QDesktopWidget>
+#include <QGuiApplication>
+#include <QScreen>
+#include <QResizeEvent>
 #include <QRegularExpressionValidator>
 #include <QDoubleValidator>
 #include <QElapsedTimer>
@@ -69,6 +71,9 @@ public:
     void setupRealtimeDataDemo(QCustomPlot *customPlot);
     void setupRealtimeDataDemoTs(QCustomPlot *customPlot);
 
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     bool init_port();
@@ -175,6 +180,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    bool m_uiReady = false;
     QString demoName;
     QTimer *timerClock = nullptr;
     QTimer *timerProcessPayload = nullptr;
