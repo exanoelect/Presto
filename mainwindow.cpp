@@ -33,6 +33,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->sw->setCurrentIndex(0);
 
+    // QStackedWidget hanya menjamin geometry page aktif tersinkron setelah
+    // event/layout diproses. Saat pindah page, hitung ulang posisi plot pada
+    // event-loop berikutnya supaya page yang baru aktif benar-benar fit ke sw.
+    connect(ui->sw, &QStackedWidget::currentChanged, this, [this](int){
+        QTimer::singleShot(0, this, [this](){
+            if (m_uiReady)
+                setWidgetPosition();
+        });
+    });
+
     //QRegExp rx("[0-9.,]+"); // hanya digit, titik, dan koma
     //QValidator *validator = new QRegExpValidator(rx, this);
 
@@ -52,11 +62,14 @@ MainWindow::MainWindow(QWidget *parent) :
         QDir().mkpath(logDir.path());
     }
 
-    setWidgetPosition();
-
     testRunning = false;
     setupPlotView = false;
     modeBegin();
+
+    // Hitung layout setelah mode awal diterapkan.
+    // modeBegin() menyembunyikan scrollbar, sehingga plot dapat memakai
+    // seluruh area QStackedWidget yang benar-benar tersedia.
+    setWidgetPosition();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1224,6 +1237,16 @@ void MainWindow::setWidgetPosition()
                         leftW,
                         stackH);
 
+    // Penting untuk QStackedWidget: page yang tidak aktif kadang masih membawa
+    // geometry lama dari Designer sampai event layout berikutnya. Sinkronkan
+    // kedua page ke ukuran content SW sekarang agar plot tidak tertahan di
+    // ukuran desain awal (mis. 1360x540).
+    const QSize stackPageSize = ui->sw->contentsRect().size();
+    ui->page->setMinimumSize(0, 0);
+    ui->page_4->setMinimumSize(0, 0);
+    ui->page->resize(stackPageSize);
+    ui->page_4->resize(stackPageSize);
+
     ui->logSerialTextEdit->setGeometry(margin,
                                        bodyY + stackH + gap,
                                        leftW,
@@ -1340,7 +1363,7 @@ void MainWindow::setWidgetPosition()
     // -------------------------------------------------------------------------
     // 5. ISI KEDUA PAGE GRAFIK DI QStackedWidget
     // -------------------------------------------------------------------------
-    auto layoutPlotPage = [scale](QWidget *page,
+    auto layoutPlotPage = [this, scale](QWidget *page,
                                   QCustomPlot *plot,
                                   QLabel *head,
                                   QLabel *unitLabel,
@@ -1350,64 +1373,131 @@ void MainWindow::setWidgetPosition()
                                   QScrollBar *hScroll,
                                   QScrollBar *vScroll)
     {
-        const int pw = page->width();
-        const int ph = page->height();
+        if (!page || !plot)
+            return;
+
+        /*
+         * JANGAN membaca page->contentsRect() sebagai sumber utama di sini.
+         * Tepat setelah sw di-resize, QStackedWidget dapat belum sempat
+         * meng-update geometry page (terutama page yang hidden). Akibatnya
+         * plot tetap memakai ukuran lama dari file .ui.
+         *
+         * Sumber ukuran yang benar adalah sw->contentsRect(). Karena child
+         * plot memakai koordinat lokal page, origin dibuat (0,0).
+         */
+        const QSize swSize = ui->sw->contentsRect().size();
+        const QRect r(0, 0, swSize.width(), swSize.height());
+
+        // Pastikan page memiliki ukuran yang sama dengan area SW.
+        page->resize(swSize);
+
+        const int pw = r.width();
+        const int ph = r.height();
 
         if (pw <= 0 || ph <= 0)
             return;
 
-        const int p = qMax(5, qRound(10 * scale));
-        const int g = qMax(4, qRound(6 * scale));
-        const int topH = qBound(30, qRound(ph * 0.065), 48);
-        const int navW = qBound(44, qRound(pw * 0.055), 82);
-        const int scroll = qBound(16, qRound(20 * scale), 24);
-        const int footerH = qBound(34, qRound(ph * 0.07), 54);
+        const int p = qMax(4, qRound(7 * scale));
+        const int g = qMax(3, qRound(5 * scale));
 
-        leftButton->setGeometry(p,
-                                qMax(2, (topH - qRound(topH * 0.72)) / 2),
+        // Header/footer dibuat tipis supaya area plot semaksimal mungkin.
+        const int topH = qBound(28, qRound(ph * 0.055), 42);
+        const int footerH = qBound(28, qRound(ph * 0.055), 42);
+        const int navW = qBound(38, qRound(pw * 0.045), 68);
+
+        // -----------------------------------------------------------------
+        // Header: tombol navigasi + judul grafik
+        // -----------------------------------------------------------------
+        const int navH = qMax(24, topH - 2 * g);
+        const int navY = r.y() + (topH - navH) / 2;
+
+        leftButton->setGeometry(r.x() + p,
+                                navY,
                                 navW,
-                                qRound(topH * 0.72));
+                                navH);
 
-        rightButton->setGeometry(pw - p - navW,
-                                 leftButton->y(),
+        rightButton->setGeometry(r.right() - p - navW + 1,
+                                 navY,
                                  navW,
-                                 leftButton->height());
+                                 navH);
 
-        head->setGeometry(leftButton->geometry().right() + g,
-                          0,
-                          qMax(40, rightButton->x() - g - (leftButton->geometry().right() + g)),
+        const int headX = leftButton->geometry().right() + g;
+        const int headRight = rightButton->x() - g;
+        head->setGeometry(headX,
+                          r.y(),
+                          qMax(20, headRight - headX),
                           topH);
 
-        const int plotX = p;
-        const int plotY = topH;
-        const int plotW = qMax(120, pw - 2 * p - scroll - g);
-        const int plotH = qMax(100,
-                               ph - plotY - scroll - footerH - 2 * g);
+        // -----------------------------------------------------------------
+        // Scrollbar hanya memakan tempat jika memang TIDAK di-hide.
+        // Pada mode normal scrollbar di-hide, jadi plot benar-benar melebar.
+        // isHidden() dipakai (bukan isVisible()) agar page yang sedang tidak
+        // aktif di QStackedWidget tidak salah dianggap scrollbar tersembunyi.
+        // -----------------------------------------------------------------
+        const bool useHScroll = hScroll && !hScroll->isHidden();
+        const bool useVScroll = vScroll && !vScroll->isHidden();
+        const int scrollSize = qBound(15, qRound(19 * scale), 22);
+        const int reserveH = useHScroll ? (scrollSize + g) : 0;
+        const int reserveV = useVScroll ? (scrollSize + g) : 0;
 
+        const int plotX = r.x() + p;
+        const int plotY = r.y() + topH + g;
+        const int plotRight = r.right() - p - reserveV;
+        const int plotBottom = r.bottom() - footerH - g - reserveH;
+
+        const int plotW = qMax(1, plotRight - plotX + 1);
+        const int plotH = qMax(1, plotBottom - plotY + 1);
+
+        // QCustomPlot fit ke seluruh area isi page/sw yang tersisa.
+        plot->setMinimumSize(0, 0);
+        plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         plot->setGeometry(plotX, plotY, plotW, plotH);
 
-        vScroll->setGeometry(plotX + plotW + g,
-                             plotY,
-                             scroll,
-                             plotH);
+        // Pastikan axis rect ikut memanfaatkan ukuran QCustomPlot.
+        plot->axisRect()->setAutoMargins(QCP::msAll);
+        plot->updateGeometry();
 
-        hScroll->setGeometry(plotX,
-                             plotY + plotH + g,
-                             plotW,
-                             scroll);
+        // -----------------------------------------------------------------
+        // Scrollbar mengikuti sisi plot bila suatu saat diaktifkan kembali.
+        // -----------------------------------------------------------------
+        if (hScroll) {
+            if (useHScroll) {
+                hScroll->setGeometry(plotX,
+                                     plot->geometry().bottom() + g,
+                                     plotW,
+                                     scrollSize);
+            } else {
+                hScroll->setGeometry(0, 0, 0, 0);
+            }
+        }
 
-        const int footerY = hScroll->geometry().bottom() + g;
-        const int clearW = qBound(58, qRound(pw * 0.075), 100);
+        if (vScroll) {
+            if (useVScroll) {
+                vScroll->setGeometry(plot->geometry().right() + g,
+                                     plotY,
+                                     scrollSize,
+                                     plotH);
+            } else {
+                vScroll->setGeometry(0, 0, 0, 0);
+            }
+        }
 
-        clearButton->setGeometry(p,
+        // -----------------------------------------------------------------
+        // Footer: Clear di kiri, satuan/keterangan di sisa lebar.
+        // -----------------------------------------------------------------
+        const int footerY = r.bottom() - footerH + 1;
+        const int clearW = qBound(52, qRound(pw * 0.065), 90);
+
+        clearButton->setGeometry(r.x() + p,
                                  footerY,
                                  clearW,
-                                 qMax(28, ph - footerY - p));
+                                 qMax(24, footerH - p));
 
-        unitLabel->setGeometry(clearButton->geometry().right() + g,
+        const int unitX = clearButton->geometry().right() + g;
+        unitLabel->setGeometry(unitX,
                                footerY,
-                               qMax(40, pw - clearButton->geometry().right() - 2 * g - p),
-                               qMax(28, ph - footerY - p));
+                               qMax(20, r.right() - p - unitX + 1),
+                               qMax(24, footerH - p));
     };
 
     layoutPlotPage(ui->page,
@@ -1438,8 +1528,18 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
 
-    if (m_uiReady)
-        setWidgetPosition();
+    if (!m_uiReady)
+        return;
+
+    // Pass pertama: resize SW dan seluruh frame segera.
+    setWidgetPosition();
+
+    // Pass kedua: setelah QStackedWidget selesai menyesuaikan geometry page.
+    // Ini penting agar plot page aktif maupun hidden benar-benar mengikuti sw.
+    QTimer::singleShot(0, this, [this](){
+        if (m_uiReady)
+            setWidgetPosition();
+    });
 }
 
 //---------------------------------------------------------------------------------------
