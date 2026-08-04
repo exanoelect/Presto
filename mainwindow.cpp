@@ -1,11 +1,25 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QFontMetrics>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // Hilangkan rich-text font-size dari Designer. Selanjutnya ukuran font
+    // dikendalikan oleh setWidgetPosition() agar adaptif terhadap resolusi.
+    ui->labelJudul->setText(QStringLiteral("MESIN UJI TEKAN"));
+    ui->labelCurrentDate->setText(QStringLiteral("Current Date"));
+    ui->labelCurrentClock->setText(QStringLiteral("00:00:00 WIB"));
+    ui->labelLoadValue->setText(QStringLiteral("0.0000"));
+    ui->labelDisplacementValue->setText(QStringLiteral("0.0000"));
+    ui->labelStopWatch->setText(QStringLiteral("00:00.00"));
+    ui->labelBatasAtas->setText(QStringLiteral("BATAS ATAS"));
+    ui->labelBatasBawah->setText(QStringLiteral("BATAS BAWAH"));
+    ui->teNama->setPlainText(ui->teNama->toPlainText());
+
     m_uiReady = true;
     getDisplayResolution();
 
@@ -23,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     timerClock = new QTimer(this);
     connect(timerClock, SIGNAL(timeout()), this, SLOT(slotTimerClock()));
     timerClock->start(1000);
+    slotTimerClock(); // isi tanggal/jam aktual sebelum adaptive font dihitung
 
     timerProcessPayload = new QTimer(this);
     connect(timerProcessPayload, SIGNAL(timeout()), this, SLOT(slotTimerProcessPayload()));
@@ -1519,6 +1534,138 @@ void MainWindow::setWidgetPosition()
                    ui->btnArrowRight,
                    ui->horizontalScrollBar,
                    ui->verticalScrollBar);
+
+    // -------------------------------------------------------------------------
+    // 6. ADAPTIVE FONT
+    // -------------------------------------------------------------------------
+    // Referensi desain utama = 1920x1080. Pada 1366x768 skala font menjadi
+    // sekitar 0.71, lalu diperkecil lagi bila teks belum muat di widget.
+    const qreal fontScale = qBound<qreal>(0.55,
+                                          qMin(W / 1920.0, H / 1080.0),
+                                          1.40);
+
+    auto removeFixedFontCss = [](QWidget *w)
+    {
+        if (!w)
+            return;
+
+        QString css = w->styleSheet();
+        if (css.isEmpty())
+            return;
+
+        // Font dari .ui (mis. font: 32pt / font-size: 36px) akan
+        // mengalahkan QWidget::setFont(). Hapus hanya deklarasi font,
+        // background/border/radius tetap dipertahankan.
+        css.remove(QRegularExpression(
+            R"((?i)\bfont(?:-size|-family|-weight|-style)?\s*:[^;}]*;?)"));
+        w->setStyleSheet(css);
+    };
+
+    auto fitFont = [&](QWidget *w,
+                       const QString &sampleText,
+                       int basePx,
+                       int minPx,
+                       bool bold = false,
+                       qreal widthUsage = 0.94,
+                       qreal heightUsage = 0.88)
+    {
+        if (!w)
+            return;
+
+        removeFixedFontCss(w);
+
+        const int maxPx = qMax(minPx, qRound(basePx * 1.40));
+        int px = qBound(minPx, qRound(basePx * fontScale), maxPx);
+
+        QFont f = w->font();
+        f.setPixelSize(px);
+        f.setBold(bold);
+
+        const int maxW = qMax(1, qRound(w->contentsRect().width()  * widthUsage));
+        const int maxH = qMax(1, qRound(w->contentsRect().height() * heightUsage));
+        QString text = sampleText;
+        if (text.isEmpty())
+            text = QStringLiteral("0");
+
+        // Fit-to-widget: jika teks masih overflow, turunkan pixel size
+        // satu per satu sampai muat. Ini menangani teks panjang seperti
+        // "Displacement (mm)" dan tanggal pada layar 1366x768.
+        while (px > minPx) {
+            QFontMetrics fm(f);
+            const QRect br = fm.boundingRect(QRect(0, 0, maxW, maxH),
+                                             Qt::AlignCenter | Qt::TextSingleLine,
+                                             text);
+            if (br.width() <= maxW && br.height() <= maxH)
+                break;
+
+            --px;
+            f.setPixelSize(px);
+        }
+
+        w->setFont(f);
+    };
+
+    // Header
+    fitFont(ui->labelJudul,       QStringLiteral("MESIN UJI TEKAN"), 64, 24, false);
+    fitFont(ui->labelCurrentDate, ui->labelCurrentDate->text(),       30, 12, false, 0.98);
+    fitFont(ui->labelCurrentClock,ui->labelCurrentClock->text(),      48, 16, false, 0.98);
+
+    // Empat panel ringkas
+    fitFont(ui->labelTargetBebanKG,  QStringLiteral("Target Beban (kg)"), 43, 15);
+    fitFont(ui->labelLoadKg,         QStringLiteral("Load (kg)"),         43, 15);
+    fitFont(ui->labelDisplacementmm, QStringLiteral("Displacement (mm)"), 43, 14);
+    fitFont(ui->labelWaktuClock,     QStringLiteral("Waktu"),             43, 15);
+
+    fitFont(ui->labelTargetBebanVal, ui->labelTargetBebanVal->text(), 64, 20, false, 0.90, 0.82);
+    fitFont(ui->labelLoadValue,      ui->labelLoadValue->text(),      64, 20, false, 0.92, 0.82);
+    fitFont(ui->labelDisplacementValue,
+            ui->labelDisplacementValue->text(),                       64, 20, false, 0.92, 0.82);
+    fitFont(ui->labelStopWatch,      QStringLiteral("00:00.00"),      64, 20, false, 0.94, 0.82);
+
+    // Panel kanan
+    fitFont(ui->labelNama,      QStringLiteral("NAMA PENGUJIAN"), 32, 12, false);
+    fitFont(ui->teNama,         ui->teNama->toPlainText(),         32, 12, false, 0.95, 0.82);
+    fitFont(ui->labelLoadStr_8, QStringLiteral("TURUN"),           24, 10, false);
+    fitFont(ui->labelLoadStr_4, QStringLiteral("MANUAL"),          37, 11, false);
+    fitFont(ui->labelLoadStr_9, QStringLiteral("NAIK"),            24, 10, false);
+    fitFont(ui->labelBatasAtas,  QStringLiteral("BATAS ATAS"),     48, 14, true);
+    fitFont(ui->labelBatasBawah, QStringLiteral("BATAS BAWAH"),    48, 14, true);
+    fitFont(ui->serialPortInfoListBox,
+            ui->serialPortInfoListBox->currentText().isEmpty()
+                ? QStringLiteral("COM99")
+                : ui->serialPortInfoListBox->currentText(),         48, 13, false, 0.90, 0.80);
+
+    // Log dan judul/footer grafik
+    fitFont(ui->logSerialTextEdit, ui->logSerialTextEdit->text(), 37, 11, false, 0.98, 0.85);
+    fitFont(ui->labelHeadmmGram, QStringLiteral("Displacement (mm) vs Load (gram)"), 16, 9);
+    fitFont(ui->labelHeadTsGram, QStringLiteral("timeStamps vs Gram"),                 16, 9);
+    fitFont(ui->labelmm,         QStringLiteral("Displacement mm"),                    14, 8);
+    fitFont(ui->labelts,         QStringLiteral("timestamps ms"),                      14, 8);
+
+    // Font QCustomPlot tidak mengikuti QWidget stylesheet, jadi atur langsung.
+    auto adaptPlotFont = [fontScale](QCustomPlot *plot)
+    {
+        if (!plot)
+            return;
+
+        const int tickPx  = qBound(8, qRound(14 * fontScale), 18);
+        const int labelPx = qBound(9, qRound(16 * fontScale), 21);
+
+        QFont tickFont = plot->xAxis->tickLabelFont();
+        tickFont.setPixelSize(tickPx);
+        plot->xAxis->setTickLabelFont(tickFont);
+        plot->yAxis->setTickLabelFont(tickFont);
+
+        QFont labelFont = plot->xAxis->labelFont();
+        labelFont.setPixelSize(labelPx);
+        plot->xAxis->setLabelFont(labelFont);
+        plot->yAxis->setLabelFont(labelFont);
+
+        plot->replot();
+    };
+
+    adaptPlotFont(ui->plotmmgram);
+    adaptPlotFont(ui->plottsgram);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2211,21 +2358,15 @@ void MainWindow::slotTimerProcessPayload()
                 "QLabel {"
                 "background-color: #D71920;"
                 "color: white;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
                 "}"
             );
             break;
         case 2: //bawah
             ui->labelBatasBawah->setText(QString::number(dataTerima.bebanAktual));
-            ui->labelBatasAtas->setStyleSheet(
+            ui->labelBatasBawah->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
                 "color: white;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
                 "}"
             );
             break;
@@ -2236,18 +2377,12 @@ void MainWindow::slotTimerProcessPayload()
                 "QLabel {"
                 "background-color: #14A0F1;"
                 "color: black;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
                 "}"
             );
             ui->labelBatasBawah->setStyleSheet(
                 "QLabel {"
                 "background-color: #14A0F1;"
                 "color: white;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
                 "}"
             );
             break;
@@ -2448,6 +2583,7 @@ void MainWindow::on_btnStart_clicked()
                 //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
                 setupRealtimeDataDemo(ui->plotmmgram);
                 setupRealtimeDataDemo(ui->plottsgram);
+                setWidgetPosition(); // setup plot mengubah font axis, terapkan lagi font adaptif
 
                 testRunning = true;
                 elapsedTimer.start();      // mulai stopwatch
@@ -2633,6 +2769,7 @@ void MainWindow::on_btnTest_clicked()
         ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
         setupRealtimeDataDemo(ui->plotmmgram);
         setupRealtimeDataDemo(ui->plottsgram);
+        setWidgetPosition(); // pertahankan font plot adaptif
     }
 }
 
