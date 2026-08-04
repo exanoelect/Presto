@@ -8,6 +8,14 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // btnExit sengaja dilepas dari frame0.
+    // Sebagai child frame0 tombol dapat ikut ter-clip/tertutup saat header
+    // mengecil pada resolusi selain 1920x1080. Menjadikannya child langsung
+    // centralWidget membuat koordinatnya selalu mengacu ke area window.
+    ui->btnExit->setParent(ui->centralWidget);
+    ui->btnExit->setVisible(true);
+    ui->btnExit->raise();
+
     // Hilangkan rich-text font-size dari Designer. Selanjutnya ukuran font
     // dikendalikan oleh setWidgetPosition() agar adaptif terhadap resolusi.
     ui->labelJudul->setText(QStringLiteral("MESIN UJI TEKAN"));
@@ -85,6 +93,26 @@ MainWindow::MainWindow(QWidget *parent) :
     // modeBegin() menyembunyikan scrollbar, sehingga plot dapat memakai
     // seluruh area QStackedWidget yang benar-benar tersedia.
     setWidgetPosition();
+
+    /*
+    m_refreshLongPressTimer = new QTimer(this);
+    m_refreshLongPressTimer->setSingleShot(true);
+    m_refreshLongPressTimer->setInterval(10000); // 10 detik
+
+    connect(m_refreshLongPressTimer, &QTimer::timeout, this, [this]() {
+
+        // Pastikan tombol memang masih ditekan
+        if (!ui->btnRefreshSerialPort->isDown())
+            return;
+
+        qDebug() << "btnRefreshSerialPort long press > 10 seconds";
+
+        m_refreshLongPressTriggered = true;
+
+        // Jalankan aksi yang sama dengan btnExit
+        on_btnExit_clicked();
+    });
+    */
 }
 
 //---------------------------------------------------------------------------------------
@@ -1112,20 +1140,50 @@ void MainWindow::setWidgetPosition()
                              buttonW,
                              buttonH);
 
-    const int clockBlockW = qBound(220,
+    // ---------------------------------------------------------------------
+    // EXIT: gunakan centralWidget sebagai parent agar TIDAK pernah ter-clip
+    // oleh frame0 pada resolusi kecil. Posisi visualnya tetap berada di
+    // sudut kanan frame0.
+    // ---------------------------------------------------------------------
+    const int exitSize = qBound(38,
+                                qRound(buttonH * 0.68),
+                                qMin(68, buttonH));
+
+    // Koordinat lokal di frame0 diperlukan untuk menghitung ruang tanggal/jam.
+    const int exitXInFrame = ui->frame0->width() - headPad - exitSize;
+    const int exitYInFrame = (headerH - exitSize) / 2;
+
+    // btnExit sekarang child centralWidget. Map posisi yang diinginkan dari
+    // koordinat frame0 -> centralWidget, sehingga tetap benar walau margin
+    // atau posisi frame0 berubah.
+    const QPoint exitPos = ui->frame0->mapTo(ui->centralWidget,
+                                             QPoint(exitXInFrame, exitYInFrame));
+
+    ui->btnExit->setMinimumSize(0, 0);
+    ui->btnExit->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    ui->btnExit->setGeometry(exitPos.x(),
+                             exitPos.y(),
+                             exitSize,
+                             exitSize);
+    ui->btnExit->setVisible(true);
+
+    // Blok tanggal/jam (child frame0) berhenti sebelum posisi lokal btnExit.
+    const int clockBlockW = qBound(190,
                                    qRound(ui->frame0->width() * 0.20),
-                                   390);
-    const int clockX = ui->frame0->width() - clockBlockW - headPad;
+                                   360);
+    const int clockX = qMax(ui->btnSave->geometry().right() + 2 * gap,
+                            exitXInFrame - gap - clockBlockW);
+    const int actualClockW = qMax(80, exitXInFrame - gap - clockX);
     const int dateH  = qMax(24, qRound((headerH - 2 * headPad) * 0.34));
 
     ui->labelCurrentDate->setGeometry(clockX,
                                       headPad,
-                                      clockBlockW,
+                                      actualClockW,
                                       dateH);
 
     ui->labelCurrentClock->setGeometry(clockX,
                                        headPad + dateH,
-                                       clockBlockW,
+                                       actualClockW,
                                        headerH - 2 * headPad - dateH);
 
     const int titleX = ui->btnSave->geometry().right() + gap;
@@ -1666,6 +1724,12 @@ void MainWindow::setWidgetPosition()
 
     adaptPlotFont(ui->plotmmgram);
     adaptPlotFont(ui->plottsgram);
+
+    // Terakhir sekali: btnExit harus berada di atas frame0 dan seluruh
+    // sibling centralWidget. Ini membuatnya tetap terlihat pada semua
+    // resolusi dan setelah resize/maximize/restore.
+    ui->btnExit->setVisible(true);
+    ui->btnExit->raise();
 }
 
 //---------------------------------------------------------------------------------------
@@ -2179,8 +2243,20 @@ void MainWindow::realtimeDataSlot(QString value)
 ******************************************************************************************************/
 void MainWindow::on_btnRefreshSerialPort_clicked()
 {
+    // Jika clicked terjadi setelah long press,
+    // jangan jalankan fungsi refresh port normal.
+    //if (m_refreshLongPressTriggered)
+    //{
+    //    qDebug() << "Refresh click ignored because long press triggered";
 
-    //showPortInfo(1);
+    //    m_refreshLongPressTriggered = false;
+    //    return;
+    //}
+
+    // ==============================
+    // NORMAL CLICK
+    // ==============================
+
     fillPortsInfo();
 
     modeLoadPort();
@@ -2670,6 +2746,14 @@ void MainWindow::on_btnRefreshSerialPort_pressed()
     );*/
 
     ui->btnRefreshSerialPort->setStyleSheet("QPushButton {""border-image: url(:/circle2.png);""}");
+
+
+    // Reset status long press
+    //m_refreshLongPressTriggered = false;
+
+    // Mulai hitung 10 detik
+    //if (m_refreshLongPressTimer)
+    //    m_refreshLongPressTimer->start();
 }
 
 void MainWindow::on_btnRefreshSerialPort_released()
@@ -2679,6 +2763,14 @@ void MainWindow::on_btnRefreshSerialPort_released()
         "border-image: url(:/circle1.png);"
         "}"
     );
+
+    // Kalau dilepas sebelum 10 detik,
+    // batalkan timer long press
+    //if (m_refreshLongPressTimer &&
+    //    m_refreshLongPressTimer->isActive()) {
+
+    //    m_refreshLongPressTimer->stop();
+    //}
 }
 
 /*****************************************************************************************************

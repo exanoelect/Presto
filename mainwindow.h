@@ -28,6 +28,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QResizeEvent>
+#include <QShowEvent>
 #include <QRegularExpressionValidator>
 #include <QDoubleValidator>
 #include <QElapsedTimer>
@@ -74,6 +75,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    //void showEvent(QShowEvent *event) override;
 
 private slots:
     bool init_port();
@@ -226,6 +228,7 @@ private:
 
     void fillPortsInfo();
     void setWidgetPosition();
+    void positionExitButton();
 
     //New
     QByteArray m_rxBuffer;
@@ -277,6 +280,9 @@ private:
 
     msglogout *mMsgLogout =  nullptr;
     msgendukur *mMsgEndUkur = nullptr;
+
+    //QTimer *m_refreshLongPressTimer = nullptr;
+    //bool m_refreshLongPressTriggered = false;
 
 };
 
