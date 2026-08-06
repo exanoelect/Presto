@@ -1,35 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QFontMetrics>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    // btnExit sengaja dilepas dari frame0.
-    // Sebagai child frame0 tombol dapat ikut ter-clip/tertutup saat header
-    // mengecil pada resolusi selain 1920x1080. Menjadikannya child langsung
-    // centralWidget membuat koordinatnya selalu mengacu ke area window.
-    ui->btnExit->setParent(ui->centralWidget);
-    ui->btnExit->setVisible(true);
-    ui->btnExit->raise();
-
-    // Hilangkan rich-text font-size dari Designer. Selanjutnya ukuran font
-    // dikendalikan oleh setWidgetPosition() agar adaptif terhadap resolusi.
-    ui->labelJudul->setText(QStringLiteral("MESIN UJI TEKAN"));
-    ui->labelCurrentDate->setText(QStringLiteral("Current Date"));
-    ui->labelCurrentClock->setText(QStringLiteral("00:00:00 WIB"));
-    ui->labelLoadValue->setText(QStringLiteral("0.0000"));
-    ui->labelDisplacementValue->setText(QStringLiteral("0.0000"));
-    ui->labelStopWatch->setText(QStringLiteral("00:00.00"));
-    ui->labelBatasAtas->setText(QStringLiteral("BATAS ATAS"));
-    ui->labelBatasBawah->setText(QStringLiteral("BATAS BAWAH"));
-    ui->teNama->setPlainText(ui->teNama->toPlainText());
-
-    m_uiReady = true;
-    getDisplayResolution();
+    getDisplayResolution(); //1920 x 1080
 
     //setGeometry(0, 0, widthScreen, heightScreen);
 
@@ -40,31 +17,24 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->plottsgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
     //setupPlot();
-    DataManagerInit();
 
     timerClock = new QTimer(this);
     connect(timerClock, SIGNAL(timeout()), this, SLOT(slotTimerClock()));
     timerClock->start(1000);
-    slotTimerClock(); // isi tanggal/jam aktual sebelum adaptive font dihitung
 
-    timerProcessPayload = new QTimer(this);
-    connect(timerProcessPayload, SIGNAL(timeout()), this, SLOT(slotTimerProcessPayload()));
-    //timerProcessPayload->start(10);
+    // Alur RX tanpa polling QTimer:
+    // readyRead -> readData()/parsing -> serialDataParsed -> enqueueParsedData
+    // -> queueDataAvailable -> processDataQueue() untuk plot, kalkulasi, logging, dan UI.
+    connect(this, &MainWindow::serialDataParsed,this, &MainWindow::enqueueParsedData,Qt::DirectConnection);
+
+    // Consumer queue dijadwalkan lewat event-loop Qt, bukan polling periodik.
+    // Ini menjaga readData() tetap ringan walaupun plot/kalkulasi cukup berat.
+    connect(this, &MainWindow::queueDataAvailable,this, &MainWindow::processDataQueue,Qt::QueuedConnection);
 
     timerStopWatch = new QTimer(this);
     connect(timerStopWatch, SIGNAL(timeout()), this, SLOT(updateStopwatch()));
 
     ui->sw->setCurrentIndex(0);
-
-    // QStackedWidget hanya menjamin geometry page aktif tersinkron setelah
-    // event/layout diproses. Saat pindah page, hitung ulang posisi plot pada
-    // event-loop berikutnya supaya page yang baru aktif benar-benar fit ke sw.
-    connect(ui->sw, &QStackedWidget::currentChanged, this, [this](int){
-        QTimer::singleShot(0, this, [this](){
-            if (m_uiReady)
-                setWidgetPosition();
-        });
-    });
 
     //QRegExp rx("[0-9.,]+"); // hanya digit, titik, dan koma
     //QValidator *validator = new QRegExpValidator(rx, this);
@@ -85,34 +55,11 @@ MainWindow::MainWindow(QWidget *parent) :
         QDir().mkpath(logDir.path());
     }
 
+    setWidgetPosition();
+
     testRunning = false;
     setupPlotView = false;
     modeBegin();
-
-    // Hitung layout setelah mode awal diterapkan.
-    // modeBegin() menyembunyikan scrollbar, sehingga plot dapat memakai
-    // seluruh area QStackedWidget yang benar-benar tersedia.
-    setWidgetPosition();
-
-    /*
-    m_refreshLongPressTimer = new QTimer(this);
-    m_refreshLongPressTimer->setSingleShot(true);
-    m_refreshLongPressTimer->setInterval(10000); // 10 detik
-
-    connect(m_refreshLongPressTimer, &QTimer::timeout, this, [this]() {
-
-        // Pastikan tombol memang masih ditekan
-        if (!ui->btnRefreshSerialPort->isDown())
-            return;
-
-        qDebug() << "btnRefreshSerialPort long press > 10 seconds";
-
-        m_refreshLongPressTriggered = true;
-
-        // Jalankan aksi yang sama dengan btnExit
-        on_btnExit_clicked();
-    });
-    */
 }
 
 //---------------------------------------------------------------------------------------
@@ -240,35 +187,74 @@ void MainWindow::testDraw()
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void MainWindow::drawRealTimemmgram()
+void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
 {
-    QVector<double> x, y;
-    for (const auto &row : dataLoad) {
-        //x.append(row.displacement);
-        //y.append(row.masa);
-
-        x.append(row.masa);
-        y.append(row.displacement);
+    // Tidak lagi menyimpan seluruh histori pada QVector dataLoad.
+    // QCPCurve menjadi buffer visualisasi tunggal, sedangkan histori penuh tetap
+    // disimpan oleh writeLog() ke CSV.
+    if (!m_mmCurve) {
+        m_mmCurve = new QCPCurve(ui->plotmmgram->xAxis, ui->plotmmgram->yAxis);
+        m_mmCurve->setPen(QPen(QColor(40, 255, 255)));
+        m_mmCurve->data()->setAutoSqueeze(false);
     }
 
-    ui->plotmmgram->addGraph();
-    ui->plotmmgram->graph(0)->setPen(QPen(Qt::yellow, 2));
-    //ui->plot->graph(0)->setData(x, y);
-    ui->plotmmgram->graph(0)->setData(x,y);
+    // Abaikan hanya sample yang benar-benar identik dengan sample sebelumnya.
+    // Jangan memakai "displacement sama ATAU massa sama" karena titik horizontal
+    // maupun vertikal merupakan bagian kurva yang valid.
+    if (m_hasLastPlotPoint &&
+        qFuzzyCompare(1.0 + m_lastPlotDisplacement, 1.0 + displacement) &&
+        qFuzzyCompare(1.0 + m_lastPlotMass, 1.0 + mass)) {
+        return;
+    }
+
+    m_mmCurveSequence += 1.0;
+    m_mmCurve->addData(m_mmCurveSequence, displacement, mass);
+
+    m_lastPlotDisplacement = displacement;
+    m_lastPlotMass = mass;
+    m_hasLastPlotPoint = true;
+
+    // QCPCurve disortir berdasarkan t (sequence), bukan displacement. Karena itu
+    // penghapusan data lama tetap benar meskipun displacement tidak monoton.
+    if (m_mmCurve->dataCount() > MAX_MM_PLOT_POINTS) {
+        const double firstSequenceToKeep =
+            m_mmCurveSequence - static_cast<double>(MAX_MM_PLOT_POINTS) + 1.0;
+        m_mmCurve->data()->removeBefore(firstSequenceToKeep);
+    }
 
     ui->plotmmgram->xAxis->setLabel("Displacement (mm)");
     ui->plotmmgram->yAxis->setLabel("Load (kg)");
 
-    ui->plotmmgram->rescaleAxes();
-    ui->plotmmgram->replot();
-}
+    // Hindari rescaleAxes() pada setiap sample karena fungsi itu memindai seluruh
+    // dataset. Range hanya diperluas ketika point baru keluar dari range saat ini.
+    QCPRange xRange = ui->plotmmgram->xAxis->range();
+    QCPRange yRange = ui->plotmmgram->yAxis->range();
 
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-void MainWindow::drawRealTimeetsgram(QString massastr)
-{
-    realtimeDataSlot(massastr);
+    bool rangeChanged = false;
+    if (displacement < xRange.lower) {
+        xRange.lower = displacement;
+        rangeChanged = true;
+    }
+    if (displacement > xRange.upper) {
+        xRange.upper = displacement;
+        rangeChanged = true;
+    }
+    if (mass < yRange.lower) {
+        yRange.lower = mass;
+        rangeChanged = true;
+    }
+    if (mass > yRange.upper) {
+        yRange.upper = mass;
+        rangeChanged = true;
+    }
+
+    if (rangeChanged) {
+        ui->plotmmgram->xAxis->setRange(xRange);
+        ui->plotmmgram->yAxis->setRange(yRange);
+    }
+
+    // Multiple request dalam satu event-loop akan digabung menjadi satu replot.
+    ui->plotmmgram->replot(QCustomPlot::rpQueuedReplot);
 }
 
 //---------------------------------------------------------------------------------------
@@ -276,57 +262,23 @@ void MainWindow::drawRealTimeetsgram(QString massastr)
 //---------------------------------------------------------------------------------------
 void MainWindow::clearGraph()
 {
+    if (m_mmCurve)
+        m_mmCurve->data()->clear();
+
     for (int i = 0; i < ui->plotmmgram->graphCount(); ++i) {
         ui->plotmmgram->graph(i)->data()->clear();
     }
-    ui->plotmmgram->replot();
+    ui->plotmmgram->replot(QCustomPlot::rpQueuedReplot);
 
     for (int i = 0; i < ui->plottsgram->graphCount(); ++i) {
         ui->plottsgram->graph(i)->data()->clear();
     }
-    ui->plottsgram->replot();
-}
+    ui->plottsgram->replot(QCustomPlot::rpQueuedReplot);
 
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-void MainWindow::DataManagerInit()
-{
-    // Inisialisasi dengan 1 row <0.0000, 0.0000>
-    dataLoad.append({0.0000, 0.0000});
-}
-
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-void MainWindow::addOrUpdate(double displacement, double masa)
-{
-    bool updated = false;
-      for (int i = 0; i < dataLoad.size(); ++i) {
-          if (dataLoad[i].displacement == displacement ||
-              dataLoad[i].masa == masa) {
-              // Update row yang punya kesamaan displacement atau masa
-              dataLoad[i].displacement = displacement;
-              dataLoad[i].masa = masa;
-              updated = true;
-              break;
-          }
-      }
-      if (!updated) {
-          // Tambahkan row baru
-          dataLoad.append({displacement, masa});
-      }
-}
-
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-void MainWindow::printData()
-{
-    qDebug() << "Data Vector:";
-      for (const auto &row : dataLoad) {
-          qDebug().nospace() << "<" << row.displacement << ", " << row.masa << ">";
-      }
+    m_mmCurveSequence = 0.0;
+    m_hasLastPlotPoint = false;
+    m_lastPlotDisplacement = 0.0;
+    m_lastPlotMass = 0.0;
 }
 
 //---------------------------------------------------------------------------------------
@@ -381,7 +333,10 @@ void MainWindow::loadCsvToPlot(const QString &fileName)
 
     file.close();
 
-    // Hapus graph lama
+    // Hapus data plot lama. QCPCurve real-time dipertahankan sebagai object,
+    // tetapi datanya dikosongkan agar tidak menggandakan histori di RAM.
+    if (m_mmCurve)
+        m_mmCurve->data()->clear();
     ui->plottsgram->clearGraphs();
     ui->plotmmgram->clearGraphs();
     qDebug() << "end of file cuk";
@@ -615,8 +570,7 @@ void MainWindow::modeBegin()
     ui->btnExit->setEnabled(true);
 
     clearGraph();
-    dataLoad.clear();
-    m_packetQueue.clear();
+    m_dataQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
     ui->teNama->setText("");
@@ -734,8 +688,7 @@ void MainWindow::modeStart()
     ui->btnExit->setEnabled(true);
 
     clearGraph();
-    dataLoad.clear();
-    m_packetQueue.clear();
+    m_dataQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
 
@@ -1038,22 +991,30 @@ void MainWindow::writeLog2(const QString &path, const QString &text)
 //---------------------------------------------------------------------------------------
 void MainWindow::getDisplayResolution()
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
+    QDesktopWidget *desktop = QApplication::desktop();
 
-    if (!screen) {
-        widthScreen = width();
-        heightScreen = height();
-        qWarning() << "Primary screen tidak ditemukan";
-        return;
+    // Get primary screen resolution
+    QRect primaryScreen =desktop->screenGeometry();
+    widthScreen = primaryScreen.width();
+    heightScreen = primaryScreen.height();
+
+    qDebug() << "Primary screen resolution:" << widthScreen << "x" << heightScreen;
+
+    // Get number of screens
+    /*
+    int screenCount = desktop->screenCount();
+    qDebug() << "Number of screens:" << screenCount;
+
+    // Get all screens resolution
+    for (int i = 0; i < screenCount; ++i) {
+        QRect screenGeometry = desktop->screenGeometry(i);
+        qDebug() << "Screen" << i << ":" << screenGeometry.width() << "x" << screenGeometry.height();
+
+        // Available geometry (excluding taskbars/docks)
+        QRect availableGeometry = desktop->availableGeometry(i);
+        qDebug() << "Available area:" << availableGeometry.width() << "x" << availableGeometry.height();
     }
-
-    // availableGeometry() lebih aman karena tidak menabrak taskbar/panel desktop.
-    const QRect available = screen->availableGeometry();
-    widthScreen = available.width();
-    heightScreen = available.height();
-
-    qDebug() << "Available screen resolution:"
-             << widthScreen << "x" << heightScreen;
+    */
 }
 
 //---------------------------------------------------------------------------------------
@@ -1090,681 +1051,267 @@ void MainWindow::fillPortsInfo()
 //---------------------------------------------------------------------------------------
 void MainWindow::setWidgetPosition()
 {
-    if (!m_uiReady || !ui->centralWidget)
-        return;
+    //Setup Widget Position and Size
+    //ui->sw->move(0,0);
+    //ui->sw->resize(500,500);
+    //ui->sw->setGeometry(0, 0, 500, 500);
+    float hHead = (heightScreen-100)/8;
+    float wHead = widthScreen/6;
+    ui->frame0->setGeometry(10,0,widthScreen-20, hHead);//-20);
+    ui->labelJudul->setGeometry(10,0,widthScreen-20, hHead);//-20);
+
+    ui->btnOpen->setGeometry(10,10,ui->frame0->height()-10,ui->frame0->height()-20);
+    ui->btnSave->setGeometry(20+ui->frame0->height(),10,ui->frame0->height()-10,ui->frame0->height()-20);
+
+    ui->labelCurrentDate->setGeometry(ui->frame0->width()-(ui->frame0->height()*2)-5,
+                                      5,
+                                      ui->frame0->height()*2,
+                                      (ui->frame0->height()-10)/3
+                                      );
+
+    ui->labelCurrentClock->setGeometry(ui->frame0->width()-(ui->frame0->height()*2)-5,
+                                       5 + (ui->frame0->height()-10)*1/3,
+                                       ui->frame0->height()*2,
+                                       (ui->frame0->height()-10)*2/3
+                                       );
+
+    ui->frameLeft1->setGeometry(10,
+                               ui->frame0->y() + ui->frame0->height() + 10,
+                               (widthScreen - 50)/4,
+                               ui->frame0->height()*3/2
+                               );
+
+    ui->frameLeft2->setGeometry(
+                               (widthScreen-10)/4 + 20,
+                                ui->frame0->y() + ui->frame0->height() + 10,
+                               (widthScreen - 50)/4,
+                               ui->frame0->height()*3/2
+                               );
+
+    ui->frameLeft3->setGeometry(
+                               2*(widthScreen-10)/4 + 30,
+                                ui->frame0->y() + ui->frame0->height() + 10,
+                               (widthScreen - 50)/4,
+                               ui->frame0->height()*3/2
+                               );
+
+    ui->frameLeft4->setGeometry(
+                               (3*widthScreen-10)/4 + 40,
+                                ui->frame0->y() + ui->frame0->height() + 10,
+                               (widthScreen - 50)/4 - 35,
+                               ui->frame0->height()*3/2
+                               );
+
+    ui->frameLeft5->setGeometry(
+                               (3*widthScreen-10)/4 + 40,
+                               ui->frameLeft4->y() + ui->frameLeft4->height() +20,
+                               (widthScreen - 50)/4 - 30,
+                               //heightScreen - ui->frame0->height() - ui->frameLeft4->height() - 30
+                               heightScreen*12/(2+2+2+11) + 10
+                               );
+
+    ui->sw->setGeometry(10,
+                        ui->frameLeft4->y() + ui->frameLeft4->height() +20,
+                        ui->frameLeft1->width() + ui->frameLeft2->width() + ui->frameLeft3->width() + 40,
+                        //heightScreen - ui->frame0->height() - ui->logSerialTextEdit->height() - ui->frameLeft1->height() - 50
+                        (heightScreen-40)*10/(2+2+2+11)
+                        );
+
+    ui->logSerialTextEdit->setGeometry(10,
+                        ui->sw->y() + ui->sw->height() + 20,
+                        ui->frameLeft1->width() + ui->frameLeft2->width() + ui->frameLeft3->width() + 40,
+                        ui->frameLeft5->height() - ui->sw->height() - 10
+                        );
+
+    //Label atas
+
+    ui->labelTargetBebanKG->setGeometry(0,0,
+                                        ui->frameLeft1->width(),
+                                        ui->frameLeft1->height()/3
+                                        );
+
+    ui->labelLoadKg->setGeometry(0,0,
+                                        ui->frameLeft2->width(),
+                                        ui->frameLeft2->height()/3
+                                        );
+
+    ui->labelDisplacementmm->setGeometry(0,0,
+                                        ui->frameLeft3->width(),
+                                        ui->frameLeft3->height()/3
+                                        );
+
+    ui->labelWaktuClock->setGeometry(0,0,
+                                        ui->frameLeft4->width(),
+                                        ui->frameLeft4->height()/3
+                                        );
+
+    //Label value
+    //1
+    ui->labelTargetBebanVal->setGeometry(10,
+                               ui->frameLeft1->height()/3,
+                               (ui->frameLeft1->width())*2/3 - 10,
+                               (ui->frameLeft1->height())*2/3 - 10
+                               );
+
+    ui->btnTargetBebanRefresh->setGeometry(ui->frameLeft1->width()*2/3 + 10,
+                             ui->frameLeft1->height()*1/3,
+                             (ui->frameLeft1->width()-20)*1/3 - 10,
+                             (ui->frameLeft1->height()-20)*2/3
+                             );
+
+    //2
+    ui->labelLoadValue->setGeometry(10,
+                               ui->frameLeft2->height()/3,
+                               (ui->frameLeft2->width())*2/3 - 10,
+                               (ui->frameLeft1->height())*2/3 - 10
+                               );
+
+    ui->btnTera->setGeometry(ui->frameLeft2->width()*2/3 + 10,
+                             ui->frameLeft2->height()*1/3,
+                             (ui->frameLeft2->width()-20)*1/3 - 10,
+                             (ui->frameLeft2->height()-20)*2/3 - 10
+                             );
+
+    //3
+    ui->labelDisplacementValue->setGeometry(10,
+                               ui->frameLeft3->height()/3,
+                               (ui->frameLeft3->width())*2/3 - 10,
+                               (ui->frameLeft3->height())*2/3 - 10
+                               );
+
+    ui->btnResetEncoder->setGeometry(ui->frameLeft2->width()*2/3 + 10,
+                             ui->frameLeft3->height()*1/3,
+                             (ui->frameLeft3->width()-20)*1/3 - 10,
+                             (ui->frameLeft3->height()-20)*2/3 - 10
+                             );
+
+    //4
+    ui->labelStopWatch->setGeometry(10,
+                             ui->frameLeft4->height()*1/3,
+                             (ui->frameLeft4->width())- 20,
+                             (ui->frameLeft4->height()*2/3) - 10
+                             );
 
     /*
-     * PENTING:
-     * Jangan gunakan widthScreen/heightScreen untuk menata child widget.
-     * Gunakan ukuran centralWidget yang BENAR-BENAR tersedia saat ini.
-     * Dengan demikian layout ikut berubah saat window di-maximize, restore,
-     * pindah monitor, atau resolusi desktop berubah.
-     */
-    const QRect area = ui->centralWidget->contentsRect();
-    const int W = area.width();
-    const int H = area.height();
+    float k = (heightScreen-hHead-50) - 60;//7/8;
 
-    if (W < 640 || H < 480)
-        return;
+    ui->frameLeft1->setGeometry(10,
+                               hHead + 10,
+                               wHead,
+                               (k*2/10) //+ 20
+                               );
 
-    // Skala hanya dipakai untuk margin/spacing kecil.
-    // Qt sendiri sudah bekerja dalam device-independent pixel.
-    const qreal scale = qBound<qreal>(0.65,
-                                     qMin(W / 1920.0, H / 1040.0),
-                                     1.50);
+    ui->frameLeft2->setGeometry(10 + wHead/4,
+                                hHead + 10,
+                                wHead,
+                                (k*3/10) //+30
+                                );
 
-    const int margin = qMax(6, qRound(10 * scale));
-    const int gap    = qMax(6, qRound(10 * scale));
 
-    // -------------------------------------------------------------------------
-    // 1. HEADER
-    // -------------------------------------------------------------------------
-    const int headerH = qBound(78, qRound(H * 0.115), 135);
 
-    ui->frame0->setGeometry(margin,
-                            0,
-                            W - 2 * margin,
-                            headerH);
 
-    const int headPad = qMax(5, qRound(10 * scale));
-    const int buttonH = qMax(48, headerH - 2 * headPad);
-    const int buttonW = buttonH; // icon button tetap proporsional
 
-    ui->btnOpen->setGeometry(headPad,
-                             headPad,
-                             buttonW,
-                             buttonH);
+    //ui->labelLoad->setGeometry(ui->frameLeft->width()*1/5,40,ui->frameLeft->width()*3/5,ui->labelLoad->height());
+   // ui->labelDisplacement->setGeometry(ui->frameLeft->width()*1/5,120,ui->frameLeft->width()*3/5,ui->labelDisplacement->height());
 
-    ui->btnSave->setGeometry(ui->btnOpen->geometry().right() + gap,
-                             headPad,
-                             buttonW,
-                             buttonH);
+    //-------------Right side--------------------
+    //ui->frameSw->setGeometry(10+10+(widthScreen/6)+10, (heightScreen/8)+10, widthScreen-20 , heightScreen - 20);
+    //ui->sw->setGeometry(0,0, ui->frameSw->width()-10, ui->frameSw->height()-10);
 
-    // ---------------------------------------------------------------------
-    // EXIT: gunakan centralWidget sebagai parent agar TIDAK pernah ter-clip
-    // oleh frame0 pada resolusi kecil. Posisi visualnya tetap berada di
-    // sudut kanan frame0.
-    // ---------------------------------------------------------------------
-    const int exitSize = qBound(38,
-                                qRound(buttonH * 0.68),
-                                qMin(68, buttonH));
+    //ui->sw->setGeometry(10+10+(widthScreen/6)+10, (heightScreen/8)+10, widthScreen-20 - (widthScreen/6)+10-30, (heightScreen*8/10));
 
-    // Koordinat lokal di frame0 diperlukan untuk menghitung ruang tanggal/jam.
-    const int exitXInFrame = ui->frame0->width() - headPad - exitSize;
-    const int exitYInFrame = (headerH - exitSize) / 2;
+   ui->sw->setGeometry(wHead + 20,
+                        hHead+10,
+                        widthScreen-wHead-30,
+                        k + 60
+                        );
 
-    // btnExit sekarang child centralWidget. Map posisi yang diinginkan dari
-    // koordinat frame0 -> centralWidget, sehingga tetap benar walau margin
-    // atau posisi frame0 berubah.
-    const QPoint exitPos = ui->frame0->mapTo(ui->centralWidget,
-                                             QPoint(exitXInFrame, exitYInFrame));
+   // ui->plottsgram->setGeometry(70,40,ui->sw->width()-90,ui->sw->height()-90);
+    ui->plotmmgram->setGeometry(70,40,ui->sw->width()-90,ui->sw->height()-90);
 
-    ui->btnExit->setMinimumSize(0, 0);
-    ui->btnExit->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-    ui->btnExit->setGeometry(exitPos.x(),
-                             exitPos.y(),
-                             exitSize,
-                             exitSize);
-    ui->btnExit->setVisible(true);
+    ui->labelHeadTsGram->setGeometry(0,10, ui->sw->width(),20);
+    ui->labelHeadmmGram->setGeometry(0,10, ui->sw->width(),20);
 
-    // Blok tanggal/jam (child frame0) berhenti sebelum posisi lokal btnExit.
-    const int clockBlockW = qBound(190,
-                                   qRound(ui->frame0->width() * 0.20),
-                                   360);
-    const int clockX = qMax(ui->btnSave->geometry().right() + 2 * gap,
-                            exitXInFrame - gap - clockBlockW);
-    const int actualClockW = qMax(80, exitXInFrame - gap - clockX);
-    const int dateH  = qMax(24, qRound((headerH - 2 * headPad) * 0.34));
+    ui->labelmm->setGeometry(0,ui->plotmmgram->height() + 40, ui->sw->width(),20);
+    ui->labelts->setGeometry(0,ui->plotmmgram->height() + 40, ui->sw->width(),20);
 
-    ui->labelCurrentDate->setGeometry(clockX,
-                                      headPad,
-                                      actualClockW,
-                                      dateH);
+    ui->labelLoadmm->setGeometry(10,0,40,ui->sw->height()-20);
+    ui->labelLoadTs->setGeometry(10,0,40,ui->sw->height()-20);
 
-    ui->labelCurrentClock->setGeometry(clockX,
-                                       headPad + dateH,
-                                       actualClockW,
-                                       headerH - 2 * headPad - dateH);
+    ui->btnClearGraphmmGram->setGeometry(0+5,
+                                         ui->sw->height()-ui->btnClearGraphmmGram->height()-5,
+                                         ui->btnClearGraphmmGram->width() - 5,
+                                         ui->btnClearGraphmmGram->height() - 5
+                                         );
 
-    const int titleX = ui->btnSave->geometry().right() + gap;
-    const int titleW = qMax(50, clockX - gap - titleX);
+    ui->btnClearGraphtsgram->setGeometry(0+5,
+                                         ui->sw->height()-ui->btnClearGraphtsgram->height()-5,
+                                         ui->btnClearGraphtsgram->width() - 5,
+                                         ui->btnClearGraphtsgram->height() - 5
+                                         );
+*/
 
-    ui->labelJudul->setGeometry(titleX,
-                                0,
-                                titleW,
-                                headerH);
-
-    // -------------------------------------------------------------------------
-    // 2. EMPAT PANEL RINGKAS DI BARIS ATAS
-    // -------------------------------------------------------------------------
-    const int summaryY = ui->frame0->geometry().bottom() + gap;
-    const int summaryH = qBound(120, qRound(H * 0.185), 210);
-
-    const int usableW = W - 2 * margin - 3 * gap;
-    const int colW = usableW / 4;
-    const int colWLast = usableW - (3 * colW);
-
-    ui->frameLeft1->setGeometry(margin,
-                                summaryY,
-                                colW,
-                                summaryH);
-
-    ui->frameLeft2->setGeometry(margin + colW + gap,
-                                summaryY,
-                                colW,
-                                summaryH);
-
-    ui->frameLeft3->setGeometry(margin + 2 * (colW + gap),
-                                summaryY,
-                                colW,
-                                summaryH);
-
-    ui->frameLeft4->setGeometry(margin + 3 * (colW + gap),
-                                summaryY,
-                                colWLast,
-                                summaryH);
-
-    // Helper untuk isi panel 1..4.
-    auto layoutSummaryPanel = [scale](QWidget *frame,
-                                      QWidget *title,
-                                      QWidget *value,
-                                      QWidget *button)
-    {
-        const int fw = frame->width();
-        const int fh = frame->height();
-        const int p  = qMax(5, qRound(10 * scale));
-        const int titleH = qRound(fh * 0.34);
-
-        title->setGeometry(0, 0, fw, titleH);
-
-        const int valueY = titleH;
-        const int valueH = fh - titleH - p;
-
-        if (button) {
-            const int buttonW = qBound(56,
-                                       qRound(fw * 0.26),
-                                       qMax(56, fw / 3));
-            const int buttonX = fw - p - buttonW;
-
-            value->setGeometry(p,
-                               valueY,
-                               qMax(40, buttonX - 2 * p),
-                               valueH);
-
-            button->setGeometry(buttonX,
-                                valueY,
-                                buttonW,
-                                valueH);
-        } else {
-            value->setGeometry(p,
-                               valueY,
-                               qMax(40, fw - 2 * p),
-                               valueH);
-        }
-    };
-
-    layoutSummaryPanel(ui->frameLeft1,
-                       ui->labelTargetBebanKG,
-                       ui->labelTargetBebanVal,
-                       ui->btnTargetBebanRefresh);
-
-    layoutSummaryPanel(ui->frameLeft2,
-                       ui->labelLoadKg,
-                       ui->labelLoadValue,
-                       ui->btnTera);
-
-    layoutSummaryPanel(ui->frameLeft3,
-                       ui->labelDisplacementmm,
-                       ui->labelDisplacementValue,
-                       ui->btnResetEncoder);
-
-    layoutSummaryPanel(ui->frameLeft4,
-                       ui->labelWaktuClock,
-                       ui->labelStopWatch,
-                       nullptr);
-
-    // -------------------------------------------------------------------------
-    // 3. AREA BAWAH: 3/4 KIRI UNTUK GRAFIK, 1/4 KANAN UNTUK KONTROL
-    // -------------------------------------------------------------------------
-    const int bodyY = summaryY + summaryH + gap;
-    const int bodyH = qMax(180, H - bodyY - margin);
-
-    const int leftW = 3 * colW + 2 * gap;
-    const int rightX = ui->frameLeft4->x();
-    const int rightW = ui->frameLeft4->width();
-
-    // Panel kontrol kanan memenuhi sisa tinggi layar.
-    ui->frameLeft5->setGeometry(rightX,
-                                bodyY,
-                                rightW,
-                                bodyH);
-
-    // Di kiri: stacked graph + log serial di bawahnya.
-    const int logH = qBound(42,
-                            qRound(bodyH * 0.095),
-                            90);
-    const int stackH = qMax(120, bodyH - logH - gap);
-
-    ui->sw->setGeometry(margin,
-                        bodyY,
-                        leftW,
-                        stackH);
-
-    // Penting untuk QStackedWidget: page yang tidak aktif kadang masih membawa
-    // geometry lama dari Designer sampai event layout berikutnya. Sinkronkan
-    // kedua page ke ukuran content SW sekarang agar plot tidak tertahan di
-    // ukuran desain awal (mis. 1360x540).
-    const QSize stackPageSize = ui->sw->contentsRect().size();
-    ui->page->setMinimumSize(0, 0);
-    ui->page_4->setMinimumSize(0, 0);
-    ui->page->resize(stackPageSize);
-    ui->page_4->resize(stackPageSize);
-
-    ui->logSerialTextEdit->setGeometry(margin,
-                                       bodyY + stackH + gap,
-                                       leftW,
-                                       logH);
-
-    // -------------------------------------------------------------------------
-    // 4. ISI PANEL KONTROL KANAN (frameLeft5)
-    //    Semua posisi sekarang dihitung dari ukuran parent, bukan pixel desain.
-    // -------------------------------------------------------------------------
-    {
-        const int fw = ui->frameLeft5->width();
-        const int fh = ui->frameLeft5->height();
-        const int p  = qMax(5, qRound(10 * scale));
-        const int g  = qMax(5, qRound(9 * scale));
-
-        // Bagi tinggi berdasarkan bobot desain asli. Total bobot = 88.
-        // Cara ini menjamin seluruh kelompok SELALU muat di frameLeft5,
-        // bahkan pada resolusi yang lebih rendah.
-        const int contentH = qMax(60, fh - 2 * p - 5 * g);
-        const int nameH    = qMax(1, qRound(contentH * 18.0 / 88.0));
-        const int manualH  = qMax(1, qRound(contentH * 27.0 / 88.0));
-        const int limitH   = qMax(1, qRound(contentH *  9.0 / 88.0));
-        const int actionH  = qMax(1, qRound(contentH * 13.0 / 88.0));
-        const int serialH  = qMax(1, contentH - nameH - manualH
-                                             - 2 * limitH - actionH);
-
-        int y = p;
-
-        // Nama pengukuran
-        ui->frameLeft_7->setGeometry(p, y, fw - 2 * p, nameH);
-        ui->labelNama->setGeometry(0,
-                                   0,
-                                   ui->frameLeft_7->width(),
-                                   qRound(nameH * 0.30));
-
-        const int editY = ui->labelNama->height() + qMax(3, g / 2);
-        const int addW  = qBound(44,
-                                 qRound(ui->frameLeft_7->width() * 0.16),
-                                 82);
-        ui->btnAddNewMeasurement->setGeometry(ui->frameLeft_7->width() - addW,
-                                               editY,
-                                               addW,
-                                               nameH - editY);
-        ui->teNama->setGeometry(0,
-                                editY,
-                                ui->btnAddNewMeasurement->x() - g,
-                                nameH - editY);
-
-        y += nameH + g;
-
-        // Manual movement
-        ui->frameLeft_5->setGeometry(p, y, fw - 2 * p, manualH);
-
-        const int manualW = ui->frameLeft_5->width();
-        const int manualTitleH = qRound(manualH * 0.24);
-        const int sideW = qMax(24, qRound(manualW * 0.21));
-        const int stopW = qMax(36, qRound(manualW * 0.32));
-        const int btnY = manualTitleH;
-        const int btnH = manualH - manualTitleH;
-
-        ui->labelLoadStr_8->setGeometry(0, 0, sideW, manualTitleH);
-        ui->labelLoadStr_9->setGeometry(manualW - sideW, 0, sideW, manualTitleH);
-        ui->labelLoadStr_4->setGeometry((manualW - stopW) / 2,
-                                        0,
-                                        stopW,
-                                        manualTitleH);
-
-        ui->btnDown->setGeometry(0, btnY, sideW, btnH);
-        ui->btnStop->setGeometry((manualW - stopW) / 2, btnY, stopW, btnH);
-        ui->btnUp->setGeometry(manualW - sideW, btnY, sideW, btnH);
-
-        y += manualH + g;
-
-        // Batas atas / bawah
-        ui->labelBatasAtas->setGeometry(p, y, fw - 2 * p, limitH);
-        y += limitH + g;
-        ui->labelBatasBawah->setGeometry(p, y, fw - 2 * p, limitH);
-        y += limitH + g;
-
-        // Start/Pause/Resume + Selesai
-        const int actionY = y;
-        const int halfW = (fw - 2 * p - g) / 2;
-
-        ui->btnStart->setGeometry(p, actionY, halfW, actionH);
-        ui->btnPause->setGeometry(p, actionY, halfW, actionH);
-        ui->btnResume->setGeometry(p, actionY, halfW, actionH);
-        ui->btnSelesai->setGeometry(p + halfW + g,
-                                    actionY,
-                                    fw - (p + halfW + g) - p,
-                                    actionH);
-
-        y += actionH + g;
-        const int serialY = y;
-
-        // Serial port selector + refresh
-        const int refreshW = qMax(34,
-                                  qRound((fw - 2 * p) * 0.24));
-        ui->btnRefreshSerialPort->setGeometry(fw - p - refreshW,
-                                              serialY,
-                                              refreshW,
-                                              serialH);
-        ui->serialPortInfoListBox->setGeometry(p,
-                                               serialY,
-                                               ui->btnRefreshSerialPort->x() - p - g,
-                                               serialH);
-
-        // Tombol test tidak dipakai pada mode normal; tetap beri posisi aman.
-        ui->btnTest->setGeometry(qMax(p, fw - p - refreshW - 45),
-                                 qMax(p, serialY - 45),
-                                 40,
-                                 40);
-    }
-
-    // -------------------------------------------------------------------------
-    // 5. ISI KEDUA PAGE GRAFIK DI QStackedWidget
-    // -------------------------------------------------------------------------
-    auto layoutPlotPage = [this, scale](QWidget *page,
-                                  QCustomPlot *plot,
-                                  QLabel *head,
-                                  QLabel *unitLabel,
-                                  QPushButton *clearButton,
-                                  QPushButton *leftButton,
-                                  QPushButton *rightButton,
-                                  QScrollBar *hScroll,
-                                  QScrollBar *vScroll)
-    {
-        if (!page || !plot)
-            return;
-
-        /*
-         * JANGAN membaca page->contentsRect() sebagai sumber utama di sini.
-         * Tepat setelah sw di-resize, QStackedWidget dapat belum sempat
-         * meng-update geometry page (terutama page yang hidden). Akibatnya
-         * plot tetap memakai ukuran lama dari file .ui.
-         *
-         * Sumber ukuran yang benar adalah sw->contentsRect(). Karena child
-         * plot memakai koordinat lokal page, origin dibuat (0,0).
-         */
-        const QSize swSize = ui->sw->contentsRect().size();
-        const QRect r(0, 0, swSize.width(), swSize.height());
-
-        // Pastikan page memiliki ukuran yang sama dengan area SW.
-        page->resize(swSize);
-
-        const int pw = r.width();
-        const int ph = r.height();
-
-        if (pw <= 0 || ph <= 0)
-            return;
-
-        const int p = qMax(4, qRound(7 * scale));
-        const int g = qMax(3, qRound(5 * scale));
-
-        // Header/footer dibuat tipis supaya area plot semaksimal mungkin.
-        const int topH = qBound(28, qRound(ph * 0.055), 42);
-        const int footerH = qBound(28, qRound(ph * 0.055), 42);
-        const int navW = qBound(38, qRound(pw * 0.045), 68);
-
-        // -----------------------------------------------------------------
-        // Header: tombol navigasi + judul grafik
-        // -----------------------------------------------------------------
-        const int navH = qMax(24, topH - 2 * g);
-        const int navY = r.y() + (topH - navH) / 2;
-
-        leftButton->setGeometry(r.x() + p,
-                                navY,
-                                navW,
-                                navH);
-
-        rightButton->setGeometry(r.right() - p - navW + 1,
-                                 navY,
-                                 navW,
-                                 navH);
-
-        const int headX = leftButton->geometry().right() + g;
-        const int headRight = rightButton->x() - g;
-        head->setGeometry(headX,
-                          r.y(),
-                          qMax(20, headRight - headX),
-                          topH);
-
-        // -----------------------------------------------------------------
-        // Scrollbar hanya memakan tempat jika memang TIDAK di-hide.
-        // Pada mode normal scrollbar di-hide, jadi plot benar-benar melebar.
-        // isHidden() dipakai (bukan isVisible()) agar page yang sedang tidak
-        // aktif di QStackedWidget tidak salah dianggap scrollbar tersembunyi.
-        // -----------------------------------------------------------------
-        const bool useHScroll = hScroll && !hScroll->isHidden();
-        const bool useVScroll = vScroll && !vScroll->isHidden();
-        const int scrollSize = qBound(15, qRound(19 * scale), 22);
-        const int reserveH = useHScroll ? (scrollSize + g) : 0;
-        const int reserveV = useVScroll ? (scrollSize + g) : 0;
-
-        const int plotX = r.x() + p;
-        const int plotY = r.y() + topH + g;
-        const int plotRight = r.right() - p - reserveV;
-        const int plotBottom = r.bottom() - footerH - g - reserveH;
-
-        const int plotW = qMax(1, plotRight - plotX + 1);
-        const int plotH = qMax(1, plotBottom - plotY + 1);
-
-        // QCustomPlot fit ke seluruh area isi page/sw yang tersisa.
-        plot->setMinimumSize(0, 0);
-        plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        plot->setGeometry(plotX, plotY, plotW, plotH);
-
-        // Pastikan axis rect ikut memanfaatkan ukuran QCustomPlot.
-        plot->axisRect()->setAutoMargins(QCP::msAll);
-        plot->updateGeometry();
-
-        // -----------------------------------------------------------------
-        // Scrollbar mengikuti sisi plot bila suatu saat diaktifkan kembali.
-        // -----------------------------------------------------------------
-        if (hScroll) {
-            if (useHScroll) {
-                hScroll->setGeometry(plotX,
-                                     plot->geometry().bottom() + g,
-                                     plotW,
-                                     scrollSize);
-            } else {
-                hScroll->setGeometry(0, 0, 0, 0);
-            }
-        }
-
-        if (vScroll) {
-            if (useVScroll) {
-                vScroll->setGeometry(plot->geometry().right() + g,
-                                     plotY,
-                                     scrollSize,
-                                     plotH);
-            } else {
-                vScroll->setGeometry(0, 0, 0, 0);
-            }
-        }
-
-        // -----------------------------------------------------------------
-        // Footer: Clear di kiri, satuan/keterangan di sisa lebar.
-        // -----------------------------------------------------------------
-        const int footerY = r.bottom() - footerH + 1;
-        const int clearW = qBound(52, qRound(pw * 0.065), 90);
-
-        clearButton->setGeometry(r.x() + p,
-                                 footerY,
-                                 clearW,
-                                 qMax(24, footerH - p));
-
-        const int unitX = clearButton->geometry().right() + g;
-        unitLabel->setGeometry(unitX,
-                               footerY,
-                               qMax(20, r.right() - p - unitX + 1),
-                               qMax(24, footerH - p));
-    };
-
-    layoutPlotPage(ui->page,
-                   ui->plotmmgram,
-                   ui->labelHeadmmGram,
-                   ui->labelmm,
-                   ui->btnClearGraphmmGram,
-                   ui->btnArrowLeftDL,
-                   ui->btnArrowRightDL,
-                   ui->horizontalScrollBar2,
-                   ui->verticalScrollBar2);
-
-    layoutPlotPage(ui->page_4,
-                   ui->plottsgram,
-                   ui->labelHeadTsGram,
-                   ui->labelts,
-                   ui->btnClearGraphtsgram,
-                   ui->btnArrowLeft,
-                   ui->btnArrowRight,
-                   ui->horizontalScrollBar,
-                   ui->verticalScrollBar);
-
-    // -------------------------------------------------------------------------
-    // 6. ADAPTIVE FONT
-    // -------------------------------------------------------------------------
-    // Referensi desain utama = 1920x1080. Pada 1366x768 skala font menjadi
-    // sekitar 0.71, lalu diperkecil lagi bila teks belum muat di widget.
-    const qreal fontScale = qBound<qreal>(0.55,
-                                          qMin(W / 1920.0, H / 1080.0),
-                                          1.40);
-
-    auto removeFixedFontCss = [](QWidget *w)
-    {
-        if (!w)
-            return;
-
-        QString css = w->styleSheet();
-        if (css.isEmpty())
-            return;
-
-        // Font dari .ui (mis. font: 32pt / font-size: 36px) akan
-        // mengalahkan QWidget::setFont(). Hapus hanya deklarasi font,
-        // background/border/radius tetap dipertahankan.
-        css.remove(QRegularExpression(
-            R"((?i)\bfont(?:-size|-family|-weight|-style)?\s*:[^;}]*;?)"));
-        w->setStyleSheet(css);
-    };
-
-    auto fitFont = [&](QWidget *w,
-                       const QString &sampleText,
-                       int basePx,
-                       int minPx,
-                       bool bold = false,
-                       qreal widthUsage = 0.94,
-                       qreal heightUsage = 0.88)
-    {
-        if (!w)
-            return;
-
-        removeFixedFontCss(w);
-
-        const int maxPx = qMax(minPx, qRound(basePx * 1.40));
-        int px = qBound(minPx, qRound(basePx * fontScale), maxPx);
-
-        QFont f = w->font();
-        f.setPixelSize(px);
-        f.setBold(bold);
-
-        const int maxW = qMax(1, qRound(w->contentsRect().width()  * widthUsage));
-        const int maxH = qMax(1, qRound(w->contentsRect().height() * heightUsage));
-        QString text = sampleText;
-        if (text.isEmpty())
-            text = QStringLiteral("0");
-
-        // Fit-to-widget: jika teks masih overflow, turunkan pixel size
-        // satu per satu sampai muat. Ini menangani teks panjang seperti
-        // "Displacement (mm)" dan tanggal pada layar 1366x768.
-        while (px > minPx) {
-            QFontMetrics fm(f);
-            const QRect br = fm.boundingRect(QRect(0, 0, maxW, maxH),
-                                             Qt::AlignCenter | Qt::TextSingleLine,
-                                             text);
-            if (br.width() <= maxW && br.height() <= maxH)
-                break;
-
-            --px;
-            f.setPixelSize(px);
-        }
-
-        w->setFont(f);
-    };
-
-    // Header
-    fitFont(ui->labelJudul,       QStringLiteral("MESIN UJI TEKAN"), 64, 24, false);
-    fitFont(ui->labelCurrentDate, ui->labelCurrentDate->text(),       30, 12, false, 0.98);
-    fitFont(ui->labelCurrentClock,ui->labelCurrentClock->text(),      48, 16, false, 0.98);
-
-    // Empat panel ringkas
-    fitFont(ui->labelTargetBebanKG,  QStringLiteral("Target Beban (kg)"), 43, 15);
-    fitFont(ui->labelLoadKg,         QStringLiteral("Load (kg)"),         43, 15);
-    fitFont(ui->labelDisplacementmm, QStringLiteral("Displacement (mm)"), 43, 14);
-    fitFont(ui->labelWaktuClock,     QStringLiteral("Waktu"),             43, 15);
-
-    fitFont(ui->labelTargetBebanVal, ui->labelTargetBebanVal->text(), 64, 20, false, 0.90, 0.82);
-    fitFont(ui->labelLoadValue,      ui->labelLoadValue->text(),      64, 20, false, 0.92, 0.82);
-    fitFont(ui->labelDisplacementValue,
-            ui->labelDisplacementValue->text(),                       64, 20, false, 0.92, 0.82);
-    fitFont(ui->labelStopWatch,      QStringLiteral("00:00.00"),      64, 20, false, 0.94, 0.82);
-
-    // Panel kanan
-    fitFont(ui->labelNama,      QStringLiteral("NAMA PENGUJIAN"), 32, 12, false);
-    fitFont(ui->teNama,         ui->teNama->toPlainText(),         32, 12, false, 0.95, 0.82);
-    fitFont(ui->labelLoadStr_8, QStringLiteral("TURUN"),           24, 10, false);
-    fitFont(ui->labelLoadStr_4, QStringLiteral("MANUAL"),          37, 11, false);
-    fitFont(ui->labelLoadStr_9, QStringLiteral("NAIK"),            24, 10, false);
-    fitFont(ui->labelBatasAtas,  QStringLiteral("BATAS ATAS"),     48, 14, true);
-    fitFont(ui->labelBatasBawah, QStringLiteral("BATAS BAWAH"),    48, 14, true);
-    fitFont(ui->serialPortInfoListBox,
-            ui->serialPortInfoListBox->currentText().isEmpty()
-                ? QStringLiteral("COM99")
-                : ui->serialPortInfoListBox->currentText(),         48, 13, false, 0.90, 0.80);
-
-    // Log dan judul/footer grafik
-    fitFont(ui->logSerialTextEdit, ui->logSerialTextEdit->text(), 37, 11, false, 0.98, 0.85);
-    fitFont(ui->labelHeadmmGram, QStringLiteral("Displacement (mm) vs Load (gram)"), 16, 9);
-    fitFont(ui->labelHeadTsGram, QStringLiteral("timeStamps vs Gram"),                 16, 9);
-    fitFont(ui->labelmm,         QStringLiteral("Displacement mm"),                    14, 8);
-    fitFont(ui->labelts,         QStringLiteral("timestamps ms"),                      14, 8);
-
-    // Font QCustomPlot tidak mengikuti QWidget stylesheet, jadi atur langsung.
-    auto adaptPlotFont = [fontScale](QCustomPlot *plot)
-    {
-        if (!plot)
-            return;
-
-        const int tickPx  = qBound(8, qRound(14 * fontScale), 18);
-        const int labelPx = qBound(9, qRound(16 * fontScale), 21);
-
-        QFont tickFont = plot->xAxis->tickLabelFont();
-        tickFont.setPixelSize(tickPx);
-        plot->xAxis->setTickLabelFont(tickFont);
-        plot->yAxis->setTickLabelFont(tickFont);
-
-        QFont labelFont = plot->xAxis->labelFont();
-        labelFont.setPixelSize(labelPx);
-        plot->xAxis->setLabelFont(labelFont);
-        plot->yAxis->setLabelFont(labelFont);
-
-        plot->replot();
-    };
-
-    adaptPlotFont(ui->plotmmgram);
-    adaptPlotFont(ui->plottsgram);
-
-    // Terakhir sekali: btnExit harus berada di atas frame0 dan seluruh
-    // sibling centralWidget. Ini membuatnya tetap terlihat pada semua
-    // resolusi dan setelah resize/maximize/restore.
-    ui->btnExit->setVisible(true);
-    ui->btnExit->raise();
-}
-
-//---------------------------------------------------------------------------------------
-// Dipanggil otomatis setiap ukuran MainWindow berubah.
-//---------------------------------------------------------------------------------------
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
-    QMainWindow::resizeEvent(event);
-
-    if (!m_uiReady)
-        return;
-
-    // Pass pertama: resize SW dan seluruh frame segera.
-    setWidgetPosition();
-
-    // Pass kedua: setelah QStackedWidget selesai menyesuaikan geometry page.
-    // Ini penting agar plot page aktif maupun hidden benar-benar mengikuti sw.
-    QTimer::singleShot(0, this, [this](){
-        if (m_uiReady)
-            setWidgetPosition();
-    });
 }
 
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void MainWindow::unpackFlag(uint8_t flag)
+bool MainWindow::parsePacket(const QByteArray &packet, DataTerima &parsedData) const
 {
-    dataTerima.motorStatus  = flag & (1 << 0);
-    dataTerima.limitAtas    = flag & (1 << 1);
-    dataTerima.limitBawah   = flag & (1 << 2);
-    dataTerima.zeroLoadcell = flag & (1 << 3);
-    dataTerima.zeroEncoder  = flag & (1 << 4);
-    dataTerima.updateData   = flag & (1 << 5);
-    dataTerima.autoFlag     = flag & (1 << 6);
+    static constexpr int PACKET_SIZE = 10;
+
+    if (packet.size() != PACKET_SIZE)
+        return false;
+
+    const uchar *p = reinterpret_cast<const uchar*>(packet.constData());
+
+    // Validasi header 0xED 0xDC.
+    if (p[0] != 0xED || p[1] != 0xDC)
+        return false;
+
+    parsedData = DataTerima{};
+    parsedData.rawPacket = packet;
+
+    //------------------------------------
+    // Beban Aktual (int32 Big Endian)
+    //------------------------------------
+    const quint32 bebanRaw =
+            (quint32(p[2]) << 24) |
+            (quint32(p[3]) << 16) |
+            (quint32(p[4]) << 8 ) |
+             quint32(p[5]);
+
+    const qint32 bebanInt = static_cast<qint32>(bebanRaw);
+    parsedData.bebanAktual = bebanInt / 1000.0f;
+
+    //------------------------------------
+    // Perpindahan (int16 Big Endian)
+    //------------------------------------
+    const quint16 perpRaw =
+            (quint16(p[6]) << 8) |
+             quint16(p[7]);
+
+    const qint16 perpInt = static_cast<qint16>(perpRaw);
+    parsedData.perpindahan = perpInt / 1000.0f;
+
+    //------------------------------------
+    // Limit Switch + Status Flag
+    //------------------------------------
+    parsedData.limitSwitch = p[8];
+    unpackFlag(p[9], parsedData);
+
+    return true;
+}
+
+void MainWindow::unpackFlag(quint8 flag, DataTerima &parsedData) const
+{
+    parsedData.motorStatus  = flag & (1 << 0);
+    parsedData.limitAtas    = flag & (1 << 1);
+    parsedData.limitBawah   = flag & (1 << 2);
+    parsedData.zeroLoadcell = flag & (1 << 3);
+    parsedData.zeroEncoder  = flag & (1 << 4);
+    parsedData.updateData   = flag & (1 << 5);
+    parsedData.autoFlag     = flag & (1 << 6);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1783,8 +1330,12 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     plotmmgram->yAxis->setTickLabelFont(font);
     plotmmgram->legend->setFont(font);
 
-    plotmmgram->addGraph(); // blue line, Pressure
-    plotmmgram->graph(0)->setPen(QPen(QColor(40, 255, 255)));
+    // Load-displacement memakai QCPCurve, bukan QCPGraph.
+    // QCPCurve menyimpan urutan akuisisi melalui parameter t sehingga kurva tetap
+    // benar walaupun displacement berhenti, berulang, atau bergerak balik.
+    m_mmCurve = new QCPCurve(plotmmgram->xAxis, plotmmgram->yAxis);
+    m_mmCurve->setPen(QPen(QColor(40, 255, 255)));
+    m_mmCurve->data()->setAutoSqueeze(false);
 
     // Ubah warna latar belakang (background)
     plotmmgram->setBackground(QBrush(QColor(30, 30, 30))); // Dark grey
@@ -1851,6 +1402,7 @@ void MainWindow::setupRealtimeDataDemoTs(QCustomPlot *plottsgram)
 
     plottsgram->addGraph(); // blue line, Pressure
     plottsgram->graph(0)->setPen(QPen(QColor(40, 255, 255)));
+    plottsgram->graph(0)->data()->setAutoSqueeze(false);
 
     // Ubah warna latar belakang (background)
     plottsgram->setBackground(QBrush(QColor(30, 30, 30))); // Dark grey
@@ -2104,13 +1656,13 @@ void MainWindow::readData()
         formattedmass = QString::number(d, 'f', 4);
         double fixed4displ = formattedmass.toDouble();
 
-        addOrUpdate(fixed4mass,fixed4displ);
+        appendLoadDisplacementPoint(fixed4displ, fixed4mass);
 
         // Simpan ke variabel class misalnya:
         //this->massaValue = massa;
         //this->displacementValue = displacement;
-        drawRealTimemmgram();
-        drawRealTimeetsgram(massa);
+
+        realtimeDataSlot(massa.toDouble());
     }
 }*/
 
@@ -2120,42 +1672,87 @@ void MainWindow::readData()
 ******************************************************************************************************/
 void MainWindow::readData()
 {
-    const int PACKET_SIZE = 10;
+    static constexpr int PACKET_SIZE = 10;
 
-    // Tambahkan data baru ke buffer
+    if (!m_serial)
+        return;
+
+    // 1) READ SERIAL: kumpulkan byte yang datang.
     m_rxBuffer.append(m_serial->readAll());
 
     while (true)
     {
-        // Cari header
-        int headerIndex = m_rxBuffer.indexOf(QByteArray("\xED\xDC",2));
+        // Cari header frame 0xED 0xDC.
+        const int headerIndex = m_rxBuffer.indexOf(QByteArray("\xED\xDC", 2));
 
-        if(headerIndex < 0)
+        if (headerIndex < 0)
         {
-            // Header tidak ditemukan
-            if(m_rxBuffer.size() > 1)
-                m_rxBuffer.remove(0, m_rxBuffer.size()-1);
+            // Header belum ditemukan. Sisakan 1 byte terakhir untuk mengantisipasi
+            // 0xED berada di ujung chunk dan 0xDC datang pada readyRead berikutnya.
+            if (m_rxBuffer.size() > 1)
+                m_rxBuffer.remove(0, m_rxBuffer.size() - 1);
 
             return;
         }
 
-        // Buang sampah sebelum header
-        if(headerIndex > 0)
+        // Buang noise/sampah sebelum header.
+        if (headerIndex > 0)
             m_rxBuffer.remove(0, headerIndex);
 
-        // Belum lengkap
-        if(m_rxBuffer.size() < PACKET_SIZE)
+        // Tunggu sampai satu frame lengkap tersedia.
+        if (m_rxBuffer.size() < PACKET_SIZE)
             return;
 
-        // Ambil 1 packet
-        QByteArray packet = m_rxBuffer.left(PACKET_SIZE);
-
-        // Masukkan queue
-        m_packetQueue.enqueue(packet);
-
-        // Hapus dari buffer
+        const QByteArray packet = m_rxBuffer.left(PACKET_SIZE);
         m_rxBuffer.remove(0, PACKET_SIZE);
+
+        // 2) PARSING: ubah raw packet menjadi data terstruktur.
+        DataTerima parsedData;
+        if (!parsePacket(packet, parsedData))
+            continue;
+
+        // 3) EMIT DATA: consumer tidak lagi menerima QByteArray mentah.
+        emit serialDataParsed(parsedData);
     }
+}
+
+void MainWindow::enqueueParsedData(const DataTerima &data)
+{
+    // 4) QUEUE: queue khusus data yang SUDAH diparsing.
+    // Batasi backlog agar Pause/consumer lambat tidak membuat RAM tumbuh tanpa batas.
+    if (m_dataQueue.size() >= MAX_RX_QUEUE_SIZE) {
+        m_dataQueue.dequeue(); // drop frame tertua, prioritaskan data real-time terbaru
+        ++m_droppedRxFrames;
+        if ((m_droppedRxFrames % 100) == 1) {
+            qWarning() << "RX queue penuh. Total frame dibuang:" << m_droppedRxFrames;
+        }
+    }
+    m_dataQueue.enqueue(data);
+
+    // Tidak ada polling timer. Begitu data masuk queue dan processing aktif,
+    // kirim signal untuk menjalankan consumer.
+    requestQueueProcessing();
+}
+
+void MainWindow::requestQueueProcessing()
+{
+    if (!m_queueProcessingEnabled || m_dataQueue.isEmpty() || m_queueProcessPending)
+        return;
+
+    // Hindari menumpuk banyak event processDataQueue jika beberapa frame
+    // diterima dalam satu burst serial.
+    m_queueProcessPending = true;
+    emit queueDataAvailable();
+}
+
+void MainWindow::setQueueProcessingEnabled(bool enabled)
+{
+    m_queueProcessingEnabled = enabled;
+
+    // Saat Start/Resume, langsung proses backlog yang mungkin terkumpul
+    // ketika processing sebelumnya Pause/Stop.
+    if (enabled)
+        requestQueueProcessing();
 }
 
 /*****************************************************************************************************
@@ -2194,31 +1791,44 @@ void MainWindow::handleError(QSerialPort::SerialPortError error)
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
 ******************************************************************************************************/
-void MainWindow::realtimeDataSlot(QString value)
+void MainWindow::realtimeDataSlot(double value)
 {
-    static QTime timeStart = QTime::currentTime();
-     // calculate two new data points:
-     double key = timeStart.msecsTo(QTime::currentTime()) / 1000.0; // time elapsed since start of demo, in seconds
-     static double lastPointKey = 0;
+    static QElapsedTimer plotClock;
+    static double lastPointKey = -1.0;
+    static QElapsedTimer replotTimer;
 
-     if (key - lastPointKey > 0.002) { // at most add point every 2 ms
-         double filteredValue = value.toDouble();// = kalmanFilter[channel].update(value.toDouble());
-         ui->plottsgram->graph(0)->addData(key, filteredValue);
-         lastPointKey = key;
-     }
+    if (!plotClock.isValid())
+        plotClock.start();
+    if (!replotTimer.isValid())
+        replotTimer.start();
 
-     // make key axis range scroll with the data (at a constant range size of 8):
-     ui->plottsgram->xAxis->setLabel("Time (s)");
-     ui->plottsgram->yAxis->setLabel("load (kg)");
-     ui->plottsgram->xAxis->setRange(key, 8, Qt::AlignRight);
+    const double key = plotClock.elapsed() / 1000.0;
 
-     static QElapsedTimer replotTimer;
-     if (!replotTimer.isValid()) replotTimer.start();
+    if (ui->plottsgram->graphCount() == 0) {
+        ui->plottsgram->addGraph();
+        ui->plottsgram->graph(0)->setPen(QPen(QColor(40, 255, 255)));
+        ui->plottsgram->graph(0)->data()->setAutoSqueeze(false);
+    }
 
-     if (replotTimer.elapsed() >= 50) { // Refresh setiap 50 ms
-         ui->plottsgram->replot();
-         replotTimer.restart();
-     }
+    if (lastPointKey < 0.0 || key - lastPointKey > 0.002) { // maks. sekitar 500 point/s
+        const double filteredValue = value;
+        QCPGraph *graph = ui->plottsgram->graph(0);
+        graph->addData(key, filteredValue);
+
+        // Layar hanya menampilkan 8 detik. Simpan sedikit margin saja di RAM,
+        // bukan seluruh data sejak aplikasi mulai berjalan.
+        graph->data()->removeBefore(key - TS_HISTORY_SECONDS);
+        lastPointKey = key;
+    }
+
+    ui->plottsgram->xAxis->setLabel("Time (s)");
+    ui->plottsgram->yAxis->setLabel("load (kg)");
+    ui->plottsgram->xAxis->setRange(key, 8, Qt::AlignRight);
+
+    if (replotTimer.elapsed() >= 50) { // maksimum sekitar 20 FPS
+        ui->plottsgram->replot(QCustomPlot::rpQueuedReplot);
+        replotTimer.restart();
+    }
 }
 
 /*****************************************************************************************************
@@ -2243,20 +1853,8 @@ void MainWindow::realtimeDataSlot(QString value)
 ******************************************************************************************************/
 void MainWindow::on_btnRefreshSerialPort_clicked()
 {
-    // Jika clicked terjadi setelah long press,
-    // jangan jalankan fungsi refresh port normal.
-    //if (m_refreshLongPressTriggered)
-    //{
-    //    qDebug() << "Refresh click ignored because long press triggered";
 
-    //    m_refreshLongPressTriggered = false;
-    //    return;
-    //}
-
-    // ==============================
-    // NORMAL CLICK
-    // ==============================
-
+    //showPortInfo(1);
     fillPortsInfo();
 
     modeLoadPort();
@@ -2272,7 +1870,7 @@ void MainWindow::on_btnStop_clicked()
     //closeSerialPort();
     //qDebug() << "CLOSED UART------------------------------------------";
     //if(timerStopWatch->isActive()) timerStopWatch->stop();
-    //if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+    //setQueueProcessingEnabled(false);
 
    // if(ui->teNama->toPlainText().isEmpty()){
    //     QMessageBox::warning(this,"Peringatan","isi nama file dulu");
@@ -2281,7 +1879,7 @@ void MainWindow::on_btnStop_clicked()
 
     if(m_serial && m_serial->isOpen()){
 
-       if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+       setQueueProcessingEnabled(false);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 3; //stop
@@ -2304,7 +1902,7 @@ void MainWindow::on_btnStop_clicked()
 void MainWindow::on_btnResume_clicked()
 {
     if(!timerStopWatch->isActive()) timerStopWatch->start(10);
-    if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
+    setQueueProcessingEnabled(true);
 
     if(m_serial && m_serial->isOpen()){
        modeResumed();
@@ -2346,56 +1944,35 @@ void MainWindow::slotTimerClock()
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
 ******************************************************************************************************/
-void MainWindow::slotTimerProcessPayload()
+void MainWindow::processDataQueue()
 {
-    while(!m_packetQueue.isEmpty())
-    {
-        QByteArray packet = m_packetQueue.dequeue();
+    // Signal queued yang meminta proses sudah diterima.
+    m_queueProcessPending = false;
 
+    // Pause/Stop hanya menahan consumer. Data serial tetap boleh masuk queue,
+    // sama seperti perilaku lama ketika consumer dinonaktifkan.
+    if (!m_queueProcessingEnabled)
+        return;
+
+    // 5) CONSUMER: semua pekerjaan yang relatif berat (plot, kalkulasi, logging, UI)
+    // dilakukan dari queue data hasil parsing, bukan dari callback readyRead.
+    while (!m_dataQueue.isEmpty())
+    {
+        dataTerima = m_dataQueue.dequeue();
+
+        // Pertahankan tampilan debug serial seperti implementasi sebelumnya.
         QString strRcv;
-        for (unsigned char c : packet) {
+        for (unsigned char c : dataTerima.rawPacket) {
             strRcv += QString("%1 ").arg(c, 2, 16, QLatin1Char('0')).toUpper();
         }
 
         if (strRcv.length() >= 5)
-            strRcv.remove(0, 5);   // Hapus 4 karakter pertama
+            strRcv.remove(0, 5); // buang dua byte header dari tampilan debug
 
         ui->logSerialTextEdit->setText(strRcv);
 
-        const uchar *p = reinterpret_cast<const uchar*>(packet.constData());
-
         //------------------------------------
-        // Beban Aktual (int32 Big Endian)
-        //------------------------------------
-        int32_t bebanInt =
-                (int32_t(p[2]) << 24) |
-                (int32_t(p[3]) << 16) |
-                (int32_t(p[4]) << 8 ) |
-                 int32_t(p[5]);
-
-        dataTerima.bebanAktual = bebanInt / 1000.0f;
-
-        //------------------------------------
-        // Perpindahan (int16 Big Endian)
-        //------------------------------------
-        int16_t perpInt =
-                (int16_t(p[6]) << 8) |
-                 int16_t(p[7]);
-
-        dataTerima.perpindahan = perpInt / 1000.0f;
-
-        //------------------------------------
-        // Limit Switch
-        //------------------------------------
-        dataTerima.limitSwitch = p[8];
-
-        //------------------------------------
-        // Status Flag
-        //------------------------------------
-        unpackFlag(p[9]);
-
-        //------------------------------------
-        // Debug
+        // Debug data hasil parsing
         //------------------------------------
         /*
         qDebug() << "==========================";
@@ -2409,43 +1986,53 @@ void MainWindow::slotTimerProcessPayload()
         qDebug() << "Zero Encoder :" << dataTerima.zeroEncoder;
         qDebug() << "Update Data  :" << dataTerima.updateData;
         qDebug() << "Auto Flag    :" << dataTerima.autoFlag;
-*/
+        */
 
-        addOrUpdate(dataTerima.bebanAktual,dataTerima.perpindahan); //susun agar tidak ada data redundant
+        // Plot langsung dari data hasil parsing. Tidak ada lagi QVector histori
+        // yang terus membesar dan tidak ada copy seluruh data pada setiap sample.
+        appendLoadDisplacementPoint(dataTerima.perpindahan,
+                                    dataTerima.bebanAktual);
+        realtimeDataSlot(dataTerima.bebanAktual);
 
-        //tampilkan di grafik
-        drawRealTimemmgram();
-        drawRealTimeetsgram(QString::number(dataTerima.bebanAktual));
+        // Logging.
+        writeLog(QString::number(dataTerima.bebanAktual) + ";" +
+                 QString::number(dataTerima.perpindahan));
 
-        //Logging
-        writeLog(QString::number(dataTerima.bebanAktual) + ";" + QString::number(dataTerima.perpindahan));
-
-        //Placement
+        // Update nilai pada UI.
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
-        //Limit switch label
+        // Limit switch label.
         switch (dataTerima.limitSwitch) {
-        case 0: //normal
+        case 0: // normal
             break;
-        case 1: //atas
+
+        case 1: // atas
             ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
                 "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
                 "}"
             );
             break;
-        case 2: //bawah
+
+        case 2: // bawah
             ui->labelBatasBawah->setText(QString::number(dataTerima.bebanAktual));
-            ui->labelBatasBawah->setStyleSheet(
+            ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
                 "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
                 "}"
             );
             break;
+
         default:
             ui->labelBatasAtas->setText("");
             ui->labelBatasBawah->setText("");
@@ -2453,16 +2040,21 @@ void MainWindow::slotTimerProcessPayload()
                 "QLabel {"
                 "background-color: #14A0F1;"
                 "color: black;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
                 "}"
             );
             ui->labelBatasBawah->setStyleSheet(
                 "QLabel {"
                 "background-color: #14A0F1;"
                 "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
                 "}"
             );
             break;
-
         }
     }
 }
@@ -2633,8 +2225,8 @@ void MainWindow::on_btnStart_clicked()
     }
 
     clearGraph();
-    dataLoad.clear();
-    m_packetQueue.clear();
+    m_dataQueue.clear();
+    m_droppedRxFrames = 0;
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
 
@@ -2659,14 +2251,13 @@ void MainWindow::on_btnStart_clicked()
                 //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
                 setupRealtimeDataDemo(ui->plotmmgram);
                 setupRealtimeDataDemo(ui->plottsgram);
-                setWidgetPosition(); // setup plot mengubah font axis, terapkan lagi font adaptif
 
                 testRunning = true;
                 elapsedTimer.start();      // mulai stopwatch
 
                 //elapsedTimer.restart();
                 if(!timerStopWatch->isActive()) timerStopWatch->start(10);
-                if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
+                setQueueProcessingEnabled(true);
 
                 float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
                 quint8 mperintahManual = 0;
@@ -2691,8 +2282,7 @@ void MainWindow::on_btnStart_clicked()
 void MainWindow::on_btnClearGraphmmGram_clicked()
 {
      clearGraph();
-     dataLoad.clear();
-     m_packetQueue.clear();
+     m_dataQueue.clear();
      dataTerima = DataTerima{};
      m_rxBuffer.clear();
 }
@@ -2704,8 +2294,7 @@ void MainWindow::on_btnClearGraphmmGram_clicked()
 void MainWindow::on_btnClearGraphtsgram_clicked()
 {
     clearGraph();
-    dataLoad.clear();
-    m_packetQueue.clear();
+    m_dataQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
 }
@@ -2746,14 +2335,6 @@ void MainWindow::on_btnRefreshSerialPort_pressed()
     );*/
 
     ui->btnRefreshSerialPort->setStyleSheet("QPushButton {""border-image: url(:/circle2.png);""}");
-
-
-    // Reset status long press
-    //m_refreshLongPressTriggered = false;
-
-    // Mulai hitung 10 detik
-    //if (m_refreshLongPressTimer)
-    //    m_refreshLongPressTimer->start();
 }
 
 void MainWindow::on_btnRefreshSerialPort_released()
@@ -2763,14 +2344,6 @@ void MainWindow::on_btnRefreshSerialPort_released()
         "border-image: url(:/circle1.png);"
         "}"
     );
-
-    // Kalau dilepas sebelum 10 detik,
-    // batalkan timer long press
-    //if (m_refreshLongPressTimer &&
-    //    m_refreshLongPressTimer->isActive()) {
-
-    //    m_refreshLongPressTimer->stop();
-    //}
 }
 
 /*****************************************************************************************************
@@ -2789,7 +2362,7 @@ void MainWindow::on_btnDown_clicked()
        //ui->btnSelesai->setVisible(true);
        //ui->btnPause->setVisible(false);
 
-       if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
+       setQueueProcessingEnabled(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 2; //turun
@@ -2820,7 +2393,7 @@ void MainWindow::on_btnUp_clicked()
        //ui->btnSelesai->setVisible(true);
        //ui->btnPause->setVisible(false);
 
-       if(!timerProcessPayload->isActive()) timerProcessPayload->start(10);
+       setQueueProcessingEnabled(true);
 
        float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 1; //naik
@@ -2861,7 +2434,6 @@ void MainWindow::on_btnTest_clicked()
         ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
         setupRealtimeDataDemo(ui->plotmmgram);
         setupRealtimeDataDemo(ui->plottsgram);
-        setWidgetPosition(); // pertahankan font plot adaptif
     }
 }
 
@@ -3275,7 +2847,7 @@ void MainWindow::on_btnSelesai_clicked()
 
     /*
     if(timerStopWatch->isActive()) timerStopWatch->stop();
-    if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+    setQueueProcessingEnabled(false);
 
     if(m_serial && m_serial->isOpen()){
        modeEnd();
@@ -3302,7 +2874,7 @@ void MainWindow::on_btnSelesai_clicked()
 void MainWindow::on_btnPause_clicked()
 {
     if(timerStopWatch->isActive()) timerStopWatch->stop();
-    if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+    setQueueProcessingEnabled(false);
 
     if(m_serial && m_serial->isOpen()){
        modePaused();
@@ -3443,8 +3015,7 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
     //modeStart();
 
     clearGraph();
-    dataLoad.clear();
-    m_packetQueue.clear();
+    m_dataQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
 }
@@ -3541,7 +3112,7 @@ void MainWindow::onbtnNo_msgLogoutClicked()
 void MainWindow::onbtnYes_msgEndUkurClicked()
 {
     if(timerStopWatch->isActive()) timerStopWatch->stop();
-    if(timerProcessPayload->isActive()) timerProcessPayload->stop();
+    setQueueProcessingEnabled(false);
 
     if(m_serial && m_serial->isOpen()){
        modeEnd();

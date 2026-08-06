@@ -25,10 +25,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QGuiApplication>
-#include <QScreen>
-#include <QResizeEvent>
-#include <QShowEvent>
+#include <QDesktopWidget>
 #include <QRegularExpressionValidator>
 #include <QDoubleValidator>
 #include <QElapsedTimer>
@@ -37,6 +34,9 @@
 #include <msglogout.h>
 #include <msgendukur.h>
 #include <QMessageBox>
+#include <QQueue>
+#include <QByteArray>
+#include <QMetaType>
 
 //color label batas atas bawah background-color: #14A0F1;
 
@@ -52,10 +52,27 @@
     #define UART_PORT "cu.usbserial-110" //"tty.usbserial-110" //"tty.usbserial-A50285BI" //"cu.usbserial-10" //"ttyS0"  //"ttyUSB0" "COM5" "ttyUSB0"
 #endif
 
-struct RowData {
-    double displacement;
-    double masa;
+// Data hasil parsing satu frame serial.
+// Raw packet tetap disimpan untuk kebutuhan debug/log serial, sedangkan
+// plot dan kalkulasi hanya menggunakan field yang sudah terurai.
+struct DataTerima {
+    float bebanAktual = 0.0f;
+    float perpindahan = 0.0f;
+
+    quint8 limitSwitch = 0;
+
+    bool motorStatus = false;
+    bool limitAtas = false;
+    bool limitBawah = false;
+    bool zeroLoadcell = false;
+    bool zeroEncoder = false;
+    bool updateData = false;
+    bool autoFlag = false;
+
+    QByteArray rawPacket;
 };
+
+Q_DECLARE_METATYPE(DataTerima)
 
 namespace Ui {
 class MainWindow;
@@ -72,26 +89,28 @@ public:
     void setupRealtimeDataDemo(QCustomPlot *customPlot);
     void setupRealtimeDataDemoTs(QCustomPlot *customPlot);
 
-
-protected:
-    void resizeEvent(QResizeEvent *event) override;
-    //void showEvent(QShowEvent *event) override;
+signals:
+    // Dikeluarkan setelah satu frame serial selesai diparsing.
+    void serialDataParsed(const DataTerima &data);
+    // Memicu consumer queue tanpa polling QTimer.
+    void queueDataAvailable();
 
 private slots:
     bool init_port();
     bool initPortForce();
     void closeSerialPort();
     void readData();
+    void enqueueParsedData(const DataTerima &data);
+    void processDataQueue();
     void handleError(QSerialPort::SerialPortError error);
 
-    void realtimeDataSlot(QString value);
+    void realtimeDataSlot(double value);
 
     //void on_btnStart_clicked();
     void on_btnRefreshSerialPort_clicked();
     void on_btnStop_clicked();
 
     void slotTimerClock();
-    void slotTimerProcessPayload();
     void updateStopwatch();
     void showPortInfo(int idx);
 
@@ -182,16 +201,26 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    bool m_uiReady = false;
     QString demoName;
     QTimer *timerClock = nullptr;
-    QTimer *timerProcessPayload = nullptr;
     QElapsedTimer elapsedTimer;
     QTimer *timerStopWatch = nullptr;
-    QQueue<QByteArray> m_packetQueue;
+    QQueue<DataTerima> m_dataQueue;
+    bool m_queueProcessingEnabled = false;
+    bool m_queueProcessPending = false;
     bool startRcvUart;
 
-    QVector<RowData> dataLoad;
+    // Batas memori untuk data real-time. Histori lengkap tetap ditulis ke CSV/log.
+    static constexpr int MAX_RX_QUEUE_SIZE = 2000;
+    static constexpr int MAX_MM_PLOT_POINTS = 10000;
+    static constexpr double TS_HISTORY_SECONDS = 10.0;
+
+    QCPCurve *m_mmCurve = nullptr;
+    double m_mmCurveSequence = 0.0;
+    double m_lastPlotDisplacement = 0.0;
+    double m_lastPlotMass = 0.0;
+    bool m_hasLastPlotPoint = false;
+    quint64 m_droppedRxFrames = 0;
 
     QSerialPort *m_serial = nullptr;
     bool headerFound = false;
@@ -210,14 +239,8 @@ private:
     void setupPlotTs();
 
     void testDraw();
-    void drawRealTimemmgram();
-    void drawRealTimeetsgram(QString massastr);
+    void appendLoadDisplacementPoint(double displacement, double mass);
     void clearGraph();
-
-    //Vector manipulation
-    void DataManagerInit();
-    void addOrUpdate(double displacement, double masa);
-    void printData();
     void loadCsvToPlot(const QString &fileName);
 
     //Logging
@@ -228,25 +251,9 @@ private:
 
     void fillPortsInfo();
     void setWidgetPosition();
-    void positionExitButton();
 
     //New
     QByteArray m_rxBuffer;
-
-    struct DataTerima{
-           float bebanAktual;
-           float perpindahan;
-
-           uint8_t limitSwitch;
-
-           bool motorStatus;
-           bool limitAtas;
-           bool limitBawah;
-           bool zeroLoadcell;
-           bool zeroEncoder;
-           bool updateData;
-           bool autoFlag;
-    };
 
     struct DataTX
     {
@@ -258,7 +265,11 @@ private:
 
     bool testRunning = false;
     DataTerima dataTerima;
-    void unpackFlag(uint8_t flag);
+    void setQueueProcessingEnabled(bool enabled);
+    void requestQueueProcessing();
+
+    bool parsePacket(const QByteArray &packet, DataTerima &parsedData) const;
+    void unpackFlag(quint8 flag, DataTerima &parsedData) const;
     void sendData(quint32 targetBeban,
                   quint8 perintahManual,
                   quint8 perintahAuto,
@@ -280,9 +291,6 @@ private:
 
     msglogout *mMsgLogout =  nullptr;
     msgendukur *mMsgEndUkur = nullptr;
-
-    //QTimer *m_refreshLongPressTimer = nullptr;
-    //bool m_refreshLongPressTriggered = false;
 
 };
 
