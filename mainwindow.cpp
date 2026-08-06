@@ -198,71 +198,141 @@ void MainWindow::testDraw()
 //---------------------------------------------------------------------------------------
 void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
 {
-    // Tidak lagi menyimpan seluruh histori pada QVector dataLoad.
-    // QCPCurve menjadi buffer visualisasi tunggal, sedangkan histori penuh tetap
-    // disimpan oleh writeLog() ke CSV.
+    qDebug() << "in " << displacement << "-" << mass;
+
     if (!m_mmCurve) {
-        m_mmCurve = new QCPCurve(ui->plotmmgram->xAxis, ui->plotmmgram->yAxis);
-        m_mmCurve->setPen(QPen(QColor(40, 255, 255)));
+        m_mmCurve = new QCPCurve(
+            ui->plotmmgram->xAxis,
+            ui->plotmmgram->yAxis
+        );
+
+        m_mmCurve->setPen(QPen(QColor(40, 255, 255), 2));
+
+        // Supaya satu titik pun langsung kelihatan
+        m_mmCurve->setScatterStyle(
+            QCPScatterStyle(QCPScatterStyle::ssCircle, 4)
+        );
+
         m_mmCurve->data()->setAutoSqueeze(false);
     }
 
-    // Abaikan hanya sample yang benar-benar identik dengan sample sebelumnya.
-    // Jangan memakai "displacement sama ATAU massa sama" karena titik horizontal
-    // maupun vertikal merupakan bagian kurva yang valid.
+    // Abaikan hanya data yang benar-benar identik
     if (m_hasLastPlotPoint &&
-        qFuzzyCompare(1.0 + m_lastPlotDisplacement, 1.0 + displacement) &&
-        qFuzzyCompare(1.0 + m_lastPlotMass, 1.0 + mass)) {
+        qFuzzyCompare(1.0 + m_lastPlotDisplacement,
+                      1.0 + displacement) &&
+        qFuzzyCompare(1.0 + m_lastPlotMass,
+                      1.0 + mass))
+    {
         return;
     }
 
+    //--------------------------------------------------
+    // Tambah data
+    //--------------------------------------------------
+
     m_mmCurveSequence += 1.0;
-    m_mmCurve->addData(m_mmCurveSequence, displacement, mass);
+
+    m_mmCurve->addData(
+        m_mmCurveSequence,
+        displacement,
+        mass
+    );
+
+    //--------------------------------------------------
+    // Sample pertama
+    //--------------------------------------------------
+
+    if (!m_hasLastPlotPoint)
+    {
+        const double xMargin = 1.0;
+        const double yMargin = 1.0;
+
+        ui->plotmmgram->xAxis->setRange(
+            displacement - xMargin,
+            displacement + xMargin
+        );
+
+        ui->plotmmgram->yAxis->setRange(
+            mass - yMargin,
+            mass + yMargin
+        );
+    }
 
     m_lastPlotDisplacement = displacement;
     m_lastPlotMass = mass;
     m_hasLastPlotPoint = true;
 
-    // QCPCurve disortir berdasarkan t (sequence), bukan displacement. Karena itu
-    // penghapusan data lama tetap benar meskipun displacement tidak monoton.
-    if (m_mmCurve->dataCount() > MAX_MM_PLOT_POINTS) {
+    //--------------------------------------------------
+    // Batasi jumlah point di RAM
+    //--------------------------------------------------
+
+    if (m_mmCurve->dataCount() > MAX_MM_PLOT_POINTS)
+    {
         const double firstSequenceToKeep =
-            m_mmCurveSequence - static_cast<double>(MAX_MM_PLOT_POINTS) + 1.0;
+            m_mmCurveSequence
+            - static_cast<double>(MAX_MM_PLOT_POINTS)
+            + 1.0;
+
         m_mmCurve->data()->removeBefore(firstSequenceToKeep);
     }
+
+    //--------------------------------------------------
+    // Label axis
+    //--------------------------------------------------
 
     ui->plotmmgram->xAxis->setLabel("Displacement (mm)");
     ui->plotmmgram->yAxis->setLabel("Load (kg)");
 
-    // Hindari rescaleAxes() pada setiap sample karena fungsi itu memindai seluruh
-    // dataset. Range hanya diperluas ketika point baru keluar dari range saat ini.
+    //--------------------------------------------------
+    // Perbesar axis hanya jika diperlukan
+    //--------------------------------------------------
+
     QCPRange xRange = ui->plotmmgram->xAxis->range();
     QCPRange yRange = ui->plotmmgram->yAxis->range();
 
     bool rangeChanged = false;
-    if (displacement < xRange.lower) {
-        xRange.lower = displacement;
-        rangeChanged = true;
-    }
-    if (displacement > xRange.upper) {
-        xRange.upper = displacement;
-        rangeChanged = true;
-    }
-    if (mass < yRange.lower) {
-        yRange.lower = mass;
-        rangeChanged = true;
-    }
-    if (mass > yRange.upper) {
-        yRange.upper = mass;
+
+    // Margin agar kurva tidak menempel di tepi
+    const double xMargin =
+        qMax(0.5, xRange.size() * 0.1);
+
+    const double yMargin =
+        qMax(0.5, yRange.size() * 0.1);
+
+    if (displacement < xRange.lower)
+    {
+        xRange.lower = displacement - xMargin;
         rangeChanged = true;
     }
 
-    if (rangeChanged) {
+    if (displacement > xRange.upper)
+    {
+        xRange.upper = displacement + xMargin;
+        rangeChanged = true;
+    }
+
+    if (mass < yRange.lower)
+    {
+        yRange.lower = mass - yMargin;
+        rangeChanged = true;
+    }
+
+    if (mass > yRange.upper)
+    {
+        yRange.upper = mass + yMargin;
+        rangeChanged = true;
+    }
+
+    if (rangeChanged)
+    {
         ui->plotmmgram->xAxis->setRange(xRange);
         ui->plotmmgram->yAxis->setRange(yRange);
     }
 
-    // Multiple request dalam satu event-loop akan digabung menjadi satu replot.
+    //--------------------------------------------------
+    // Replot
+    //--------------------------------------------------
+
     ui->plotmmgram->replot(QCustomPlot::rpQueuedReplot);
 }
 
@@ -1871,6 +1941,10 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     plotmmgram->yAxis->setTickLabelFont(font);
     plotmmgram->legend->setFont(font);
 
+    //plotmmgram->addGraph(); // blue line, Pressure
+    //plotmmgram->graph(0)->setPen(QPen(QColor(250, 250, 250)));
+    //plotmmgram->graph(0)->data()->setAutoSqueeze(false);
+
     // Load-displacement memakai QCPCurve, bukan QCPGraph.
     // QCPCurve menyimpan urutan akuisisi melalui parameter t sehingga kurva tetap
     // benar walaupun displacement berhenti, berulang, atau bergerak balik.
@@ -1906,7 +1980,7 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
     //plot->xAxis->setTicker(timeTicker);
-    plotmmgram->xAxis->setRange(0, 10000); //350);
+    plotmmgram->xAxis->setRange(0, 0.02);//10000); //350);
     plotmmgram->axisRect()->setupFullAxesBox();
     //plot->yAxis->setRange(-1.0, 1.0);
     //plot->yAxis->setRange(-0.6, 1.0);
@@ -2564,6 +2638,7 @@ void MainWindow::processDataQueue()
         // Debug data hasil parsing
         //------------------------------------
 
+        /*
         qDebug() << "==========================";
         qDebug() << "Beban        :" << dataTerima.bebanAktual;
         qDebug() << "Perpindahan  :" << dataTerima.perpindahan;
@@ -2575,7 +2650,7 @@ void MainWindow::processDataQueue()
         qDebug() << "Zero Encoder :" << dataTerima.zeroEncoder;
         qDebug() << "Update Data  :" << dataTerima.updateData;
         qDebug() << "Auto Flag    :" << dataTerima.autoFlag;
-
+*/
 
         // Plot langsung dari data hasil parsing. Tidak ada lagi QVector histori
         // yang terus membesar dan tidak ada copy seluruh data pada setiap sample.
@@ -2590,6 +2665,33 @@ void MainWindow::processDataQueue()
         // Update nilai pada UI.
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
+
+        if(dataTerima.bebanAktual >= ui->labelTargetBebanVal->text().toInt()){
+            ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: #D71920;"
+                "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
+
+            timerStopWatch->stop();
+            setQueueProcessingEnabled(false);
+
+            float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+            quint8 mperintahManual = 3; //stop
+            quint8 mperintahAuto = 0;
+            quint8 mupdateData = 0;
+
+            sendData(mtargetBeban,
+                     mperintahManual,
+                     mperintahAuto,
+                     mupdateData);
+
+        }
 
         // Limit switch label.
         switch (dataTerima.limitSwitch) {
