@@ -1949,7 +1949,7 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     // QCPCurve menyimpan urutan akuisisi melalui parameter t sehingga kurva tetap
     // benar walaupun displacement berhenti, berulang, atau bergerak balik.
     m_mmCurve = new QCPCurve(plotmmgram->xAxis, plotmmgram->yAxis);
-    m_mmCurve->setPen(QPen(QColor(40, 255, 255)));
+    m_mmCurve->setPen(QPen(QColor(255, 255, 0)));
     m_mmCurve->data()->setAutoSqueeze(false);
     m_mmCurve->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle,5));
 
