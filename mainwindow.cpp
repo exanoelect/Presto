@@ -1951,6 +1951,7 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     m_mmCurve = new QCPCurve(plotmmgram->xAxis, plotmmgram->yAxis);
     m_mmCurve->setPen(QPen(QColor(40, 255, 255)));
     m_mmCurve->data()->setAutoSqueeze(false);
+    m_mmCurve->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle,5));
 
     // Ubah warna latar belakang (background)
     plotmmgram->setBackground(QBrush(QColor(30, 30, 30))); // Dark grey
@@ -1980,7 +1981,7 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
     //plot->xAxis->setTicker(timeTicker);
-    plotmmgram->xAxis->setRange(0, 0.02);//10000); //350);
+    plotmmgram->xAxis->setRange(0, 100);//10000); //350);
     plotmmgram->axisRect()->setupFullAxesBox();
     //plot->yAxis->setRange(-1.0, 1.0);
     //plot->yAxis->setRange(-0.6, 1.0);
@@ -2654,8 +2655,7 @@ void MainWindow::processDataQueue()
 
         // Plot langsung dari data hasil parsing. Tidak ada lagi QVector histori
         // yang terus membesar dan tidak ada copy seluruh data pada setiap sample.
-        appendLoadDisplacementPoint(dataTerima.perpindahan,
-                                    dataTerima.bebanAktual);
+        appendLoadDisplacementPoint(dataTerima.perpindahan,dataTerima.bebanAktual);
         realtimeDataSlot(dataTerima.bebanAktual);
 
         // Logging.
@@ -2940,8 +2940,8 @@ void MainWindow::on_btnStart_clicked()
           QTimer::singleShot(2000, this, [this](){
                 qDebug() << "Startn";
                 //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
-                setupRealtimeDataDemo(ui->plotmmgram);
-                setupRealtimeDataDemo(ui->plottsgram);
+                //setupRealtimeDataDemo(ui->plotmmgram);
+                //setupRealtimeDataDemoTs(ui->plottsgram);
 
                 testRunning = true;
                 elapsedTimer.start();      // mulai stopwatch
