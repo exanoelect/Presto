@@ -89,6 +89,10 @@ public:
     void setupRealtimeDataDemo(QCustomPlot *customPlot);
     void setupRealtimeDataDemoTs(QCustomPlot *customPlot);
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
+
 signals:
     // Dikeluarkan setelah satu frame serial selesai diparsing.
     void serialDataParsed(const DataTerima &data);
@@ -201,6 +205,8 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    bool m_uiReady = false;
+
     QString demoName;
     QTimer *timerClock = nullptr;
     QElapsedTimer elapsedTimer;
@@ -279,6 +285,7 @@ private:
     void setPlotView();
     void resetPlotView();
     bool setupPlotView;
+    void positionExitButton();
 
     //mode
     void modeBegin();

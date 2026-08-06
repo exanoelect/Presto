@@ -310,7 +310,7 @@ static const uint qt_meta_data_MainWindow[] = {
     QMetaType::Void, 0x80000000 | 3,    4,
     QMetaType::Void,
     QMetaType::Void, 0x80000000 | 13,   14,
-    QMetaType::Void, QMetaType::QString,   16,
+    QMetaType::Void, QMetaType::Double,   16,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -409,7 +409,7 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 6: _t->enqueueParsedData((*reinterpret_cast< const DataTerima(*)>(_a[1]))); break;
         case 7: _t->processDataQueue(); break;
         case 8: _t->handleError((*reinterpret_cast< QSerialPort::SerialPortError(*)>(_a[1]))); break;
-        case 9: _t->realtimeDataSlot((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 9: _t->realtimeDataSlot((*reinterpret_cast< double(*)>(_a[1]))); break;
         case 10: _t->on_btnRefreshSerialPort_clicked(); break;
         case 11: _t->on_btnStop_clicked(); break;
         case 12: _t->slotTimerClock(); break;
