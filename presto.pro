@@ -29,18 +29,21 @@ SOURCES += \
         mainwindow.cpp \
     qcustomplot.cpp \
     msglogout.cpp \
-    msgendukur.cpp
+    msgendukur.cpp \
+    msgselesai.cpp
 
 HEADERS += \
         mainwindow.h \
     qcustomplot.h \
     msglogout.h \
-    msgendukur.h
+    msgendukur.h \
+    msgselesai.h
 
 FORMS += \
         mainwindow.ui \
     msglogout.ui \
-    msgendukur.ui
+    msgendukur.ui \
+    msgselesai.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

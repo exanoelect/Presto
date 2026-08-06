@@ -12,6 +12,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    setupRealtimeDataDemo(ui->plotmmgram);
+    setupRealtimeDataDemoTs(ui->plottsgram);
+
+    ui->plotmmgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    ui->plottsgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+
     // btnExit harus mempunyai parent yang sama dengan widget utama lainnya.
     // Jangan dijadikan child langsung QMainWindow karena centralWidget dikelola
     // oleh layout internal QMainWindow dan dapat menutup overlay tersebut.
@@ -20,8 +26,29 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->btnExit->setVisible(true);
     ui->btnExit->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 
-    ui->btnExit->setParent(ui->centralWidget);
-    ui->btnExit->setVisible(true);
+    // Gunakan tampilan mandiri yang TIDAK tergantung resource gambar.
+    // Dengan begitu tombol tetap terlihat walaupun resource exit*.png bermasalah.
+    const QIcon exitIcon(QStringLiteral(":/application-exit.png"));
+    if (!exitIcon.isNull()) {
+        ui->btnExit->setIcon(exitIcon);
+        ui->btnExit->setText(QString());
+    } else {
+        ui->btnExit->setIcon(QIcon());
+        ui->btnExit->setText(QStringLiteral("X"));
+    }
+    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/application-exit.png);""}");
+    ui->btnExit->setStyleSheet(
+        "QPushButton {"
+        "background-color: rgba(215,25,32,210);"
+        "color: white;"
+        "font-weight: bold;"
+        "border: 2px solid white;"
+        "}"
+        "QPushButton:disabled {"
+        "background-color: rgba(120,120,120,180);"
+        "color: #dddddd;"
+        "}"
+    );
     ui->btnExit->raise();
 
     // Hilangkan rich-text font-size dari Designer. Selanjutnya ukuran font
@@ -55,6 +82,18 @@ MainWindow::MainWindow(QWidget *parent) :
     timerClock->start(1000);
     slotTimerClock(); // isi tanggal/jam aktual sebelum adaptive font dihitung
 
+    // Alur RX tanpa polling QTimer:
+     // readyRead -> readData()/parsing -> serialDataParsed -> enqueueParsedData
+     // -> queueDataAvailable -> processDataQueue() untuk plot, kalkulasi, logging, dan UI.
+     connect(this, &MainWindow::serialDataParsed,
+             this, &MainWindow::enqueueParsedData,
+             Qt::DirectConnection);
+
+     // Consumer queue dijadwalkan lewat event-loop Qt, bukan polling periodik.
+     // Ini menjaga readData() tetap ringan walaupun plot/kalkulasi cukup berat.
+     connect(this, &MainWindow::queueDataAvailable,
+             this, &MainWindow::processDataQueue,
+             Qt::QueuedConnection);
 
     timerStopWatch = new QTimer(this);
     connect(timerStopWatch, SIGNAL(timeout()), this, SLOT(updateStopwatch()));
@@ -1807,7 +1846,7 @@ void MainWindow::positionExitButton()
         "color: #EEEEEE;"
         "border: 3px solid #DDDDDD;"
         "}"
-    ).arg(size / 2);
+    ).arg(size / 8);
 
     ui->btnExit->setStyleSheet(style);
 
