@@ -11,60 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    setupRealtimeDataDemo(ui->plotmmgram);
-    setupRealtimeDataDemoTs(ui->plottsgram);
-
-    ui->plotmmgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
-    ui->plottsgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
-
-    // btnExit harus mempunyai parent yang sama dengan widget utama lainnya.
-    // Jangan dijadikan child langsung QMainWindow karena centralWidget dikelola
-    // oleh layout internal QMainWindow dan dapat menutup overlay tersebut.
-    ui->btnExit->setParent(ui->centralWidget);
-    ui->btnExit->setWindowFlags(Qt::Widget);
-    ui->btnExit->setVisible(true);
-    ui->btnExit->setAttribute(Qt::WA_TransparentForMouseEvents, false);
-
-    // Gunakan tampilan mandiri yang TIDAK tergantung resource gambar.
-    // Dengan begitu tombol tetap terlihat walaupun resource exit*.png bermasalah.
-    const QIcon exitIcon(QStringLiteral(":/application-exit.png"));
-    if (!exitIcon.isNull()) {
-        ui->btnExit->setIcon(exitIcon);
-        ui->btnExit->setText(QString());
-    } else {
-        ui->btnExit->setIcon(QIcon());
-        ui->btnExit->setText(QStringLiteral("X"));
-    }
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/application-exit.png);""}");
-    ui->btnExit->setStyleSheet(
-        "QPushButton {"
-        "background-color: rgba(215,25,32,210);"
-        "color: white;"
-        "font-weight: bold;"
-        "border: 2px solid white;"
-        "}"
-        "QPushButton:disabled {"
-        "background-color: rgba(120,120,120,180);"
-        "color: #dddddd;"
-        "}"
-    );
-    ui->btnExit->raise();
-
-    // Hilangkan rich-text font-size dari Designer. Selanjutnya ukuran font
-    // dikendalikan oleh setWidgetPosition() agar adaptif terhadap resolusi.
-    ui->labelJudul->setText(QStringLiteral("MESIN UJI TEKAN"));
-    ui->labelCurrentDate->setText(QStringLiteral("Current Date"));
-    ui->labelCurrentClock->setText(QStringLiteral("00:00:00 WIB"));
-    ui->labelLoadValue->setText(QStringLiteral("0.0000"));
-    ui->labelDisplacementValue->setText(QStringLiteral("0.0000"));
-    ui->labelStopWatch->setText(QStringLiteral("00:00.00"));
-    ui->labelBatasAtas->setText(QStringLiteral("BATAS ATAS"));
-    ui->labelBatasBawah->setText(QStringLiteral("BATAS BAWAH"));
-    ui->teNama->setPlainText(ui->teNama->toPlainText());
-
-    m_uiReady = true;
-    getDisplayResolution();
+    getDisplayResolution(); //1920 x 1080
 
     //setGeometry(0, 0, widthScreen, heightScreen);
 
@@ -75,40 +22,28 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->plottsgram->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
     //setupPlot();
-    //DataManagerInit();
 
     timerClock = new QTimer(this);
     connect(timerClock, SIGNAL(timeout()), this, SLOT(slotTimerClock()));
     timerClock->start(1000);
-    slotTimerClock(); // isi tanggal/jam aktual sebelum adaptive font dihitung
 
     // Alur RX tanpa polling QTimer:
-     // readyRead -> readData()/parsing -> serialDataParsed -> enqueueParsedData
-     // -> queueDataAvailable -> processDataQueue() untuk plot, kalkulasi, logging, dan UI.
-     connect(this, &MainWindow::serialDataParsed,
-             this, &MainWindow::enqueueParsedData,
-             Qt::DirectConnection);
+    // readyRead -> readData()/parsing -> serialDataParsed -> enqueueParsedData
+    // -> queueDataAvailable -> processDataQueue() untuk plot, kalkulasi, logging, dan UI.
+    connect(this, &MainWindow::serialDataParsed,
+            this, &MainWindow::enqueueParsedData,
+            Qt::DirectConnection);
 
-     // Consumer queue dijadwalkan lewat event-loop Qt, bukan polling periodik.
-     // Ini menjaga readData() tetap ringan walaupun plot/kalkulasi cukup berat.
-     connect(this, &MainWindow::queueDataAvailable,
-             this, &MainWindow::processDataQueue,
-             Qt::QueuedConnection);
+    // Consumer queue dijadwalkan lewat event-loop Qt, bukan polling periodik.
+    // Ini menjaga readData() tetap ringan walaupun plot/kalkulasi cukup berat.
+    connect(this, &MainWindow::queueDataAvailable,
+            this, &MainWindow::processDataQueue,
+            Qt::QueuedConnection);
 
     timerStopWatch = new QTimer(this);
     connect(timerStopWatch, SIGNAL(timeout()), this, SLOT(updateStopwatch()));
 
     ui->sw->setCurrentIndex(0);
-
-    // QStackedWidget hanya menjamin geometry page aktif tersinkron setelah
-    // event/layout diproses. Saat pindah page, hitung ulang posisi plot pada
-    // event-loop berikutnya supaya page yang baru aktif benar-benar fit ke sw.
-    connect(ui->sw, &QStackedWidget::currentChanged, this, [this](int){
-        QTimer::singleShot(0, this, [this](){
-            if (m_uiReady)
-                setWidgetPosition();
-        });
-    });
 
     //QRegExp rx("[0-9.,]+"); // hanya digit, titik, dan koma
     //QValidator *validator = new QRegExpValidator(rx, this);
@@ -129,14 +64,11 @@ MainWindow::MainWindow(QWidget *parent) :
         QDir().mkpath(logDir.path());
     }
 
+    setWidgetPosition();
+
     testRunning = false;
     setupPlotView = false;
     modeBegin();
-
-    // Hitung layout setelah mode awal diterapkan.
-    // modeBegin() menyembunyikan scrollbar, sehingga plot dapat memakai
-    // seluruh area QStackedWidget yang benar-benar tersedia.
-    setWidgetPosition();
 }
 
 //---------------------------------------------------------------------------------------
@@ -665,7 +597,7 @@ void MainWindow::modeBegin()
     ui->btnDown->setStyleSheet("QPushButton {""border-image: url(:/down4.png);""}");
     ui->btnUp->setStyleSheet("QPushButton {""border-image: url(:/up4.png);""}");
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
-    ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
+    //ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit4.png);""}");
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add.png);""}");
     ui->btnSave->setStyleSheet("QPushButton {""border-image: url(:/save4.png);""}");
@@ -2364,10 +2296,15 @@ void MainWindow::readData()
             continue;
 
         // 3) EMIT DATA: consumer tidak lagi menerima QByteArray mentah.
+        //qDebug() << "Parsed Data ";
         emit serialDataParsed(parsedData);
     }
 }
 
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
 void MainWindow::enqueueParsedData(const DataTerima &data)
 {
     // 4) QUEUE: queue khusus data yang SUDAH diparsing.
@@ -2477,7 +2414,7 @@ void MainWindow::realtimeDataSlot(double value)
     ui->plottsgram->yAxis->setLabel("load (kg)");
     ui->plottsgram->xAxis->setRange(key, 8, Qt::AlignRight);
 
-    if (replotTimer.elapsed() >= 50) { // maksimum sekitar 20 FPS
+    if (replotTimer.elapsed() >= 5) { // maksimum sekitar 200 FPS
         ui->plottsgram->replot(QCustomPlot::rpQueuedReplot);
         replotTimer.restart();
     }
@@ -2626,7 +2563,7 @@ void MainWindow::processDataQueue()
         //------------------------------------
         // Debug data hasil parsing
         //------------------------------------
-        /*
+
         qDebug() << "==========================";
         qDebug() << "Beban        :" << dataTerima.bebanAktual;
         qDebug() << "Perpindahan  :" << dataTerima.perpindahan;
@@ -2638,7 +2575,7 @@ void MainWindow::processDataQueue()
         qDebug() << "Zero Encoder :" << dataTerima.zeroEncoder;
         qDebug() << "Update Data  :" << dataTerima.updateData;
         qDebug() << "Auto Flag    :" << dataTerima.autoFlag;
-        */
+
 
         // Plot langsung dari data hasil parsing. Tidak ada lagi QVector histori
         // yang terus membesar dan tidak ada copy seluruh data pada setiap sample.
