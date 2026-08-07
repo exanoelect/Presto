@@ -30,15 +30,11 @@ MainWindow::MainWindow(QWidget *parent) :
     // Alur RX tanpa polling QTimer:
     // readyRead -> readData()/parsing -> serialDataParsed -> enqueueParsedData
     // -> queueDataAvailable -> processDataQueue() untuk plot, kalkulasi, logging, dan UI.
-    connect(this, &MainWindow::serialDataParsed,
-            this, &MainWindow::enqueueParsedData,
-            Qt::DirectConnection);
+    connect(this, &MainWindow::serialDataParsed,this, &MainWindow::enqueueParsedData,Qt::DirectConnection);
 
     // Consumer queue dijadwalkan lewat event-loop Qt, bukan polling periodik.
     // Ini menjaga readData() tetap ringan walaupun plot/kalkulasi cukup berat.
-    connect(this, &MainWindow::queueDataAvailable,
-            this, &MainWindow::processDataQueue,
-            Qt::QueuedConnection);
+    connect(this, &MainWindow::queueDataAvailable,this, &MainWindow::processDataQueue,Qt::QueuedConnection);
 
     timerStopWatch = new QTimer(this);
     connect(timerStopWatch, SIGNAL(timeout()), this, SLOT(updateStopwatch()));
@@ -2691,6 +2687,16 @@ void MainWindow::processDataQueue()
                      mperintahAuto,
                      mupdateData);
 
+        }else{
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: rgb(143, 255, 248);"
+                "color: black;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
         }
 
         // Limit switch label.
