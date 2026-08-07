@@ -2923,7 +2923,7 @@ void MainWindow::on_btnStart_clicked()
 
     startRcvUart = true;
 
-    logFilePath = logDir.filePath(ui->teNama->toPlainText());// + "_" + strTanggal + ".csv");
+    logFilePath = logDir.filePath(ui->teNama->toPlainText() + ".csv");// + "_" + strTanggal + ".csv");
     qDebug() << "Path " << logFilePath;
 
     if(ui->serialPortInfoListBox->currentText() != ""){
