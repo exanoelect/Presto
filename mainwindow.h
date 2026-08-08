@@ -37,6 +37,8 @@
 #include <QQueue>
 #include <QByteArray>
 #include <QMetaType>
+#include <msgtargettercapai.h>
+#include <msgisinamadulu.h>
 
 //color label batas atas bawah background-color: #14A0F1;
 
@@ -180,6 +182,8 @@ private slots:
     void on_btnSave_clicked();
     void on_btnExit_clicked();
     void on_btnAddNewMeasurement_clicked();
+    void on_btnMsgTargetercapai_clicked();
+    void on_btnMsgisinamadulu_clicked();
 
     //1...............
     void horzScrollBarChanged(int value);
@@ -269,6 +273,7 @@ private:
         quint8 updateData = 0;
     };
 
+    DataTX dataTx;
     bool testRunning = false;
     DataTerima dataTerima;
     void setQueueProcessingEnabled(bool enabled);
@@ -298,7 +303,8 @@ private:
 
     msglogout *mMsgLogout =  nullptr;
     msgendukur *mMsgEndUkur = nullptr;
-
+    msgtargetercapai *mMsgTargeTercapai = nullptr;
+    msgisinamadulu *mMsgisinamadulu = nullptr;
 };
 
 #endif // MAINWINDOW_H

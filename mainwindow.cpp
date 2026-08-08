@@ -2662,7 +2662,7 @@ void MainWindow::processDataQueue()
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
-        if(dataTerima.bebanAktual >= ui->labelTargetBebanVal->text().toInt()){
+        if(dataTerima.bebanAktual >= dataTx.targetBeban){
             ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
@@ -2686,6 +2686,29 @@ void MainWindow::processDataQueue()
                      mperintahManual,
                      mperintahAuto,
                      mupdateData);
+
+            if (!mMsgTargeTercapai) {
+                qDebug() << "warningbox baru akan dicreate";
+                mMsgTargeTercapai = new msgtargetercapai(this);
+                connect(mMsgTargeTercapai, &msgtargetercapai::btnYesClicked, this, &MainWindow::on_btnMsgTargetercapai_clicked);
+                connect(mMsgTargeTercapai, &QObject::destroyed, [=]() mutable {
+                    qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
+                    mMsgTargeTercapai = nullptr; // Set pointer to nullptr
+                });
+                mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+                mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+
+                mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+                mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+                mMsgTargeTercapai->setWindowModality(Qt::ApplicationModal);
+                mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
+                mMsgTargeTercapai->show();
+            } else {
+                // Jika sudah ada, kirim notifikasi
+                qDebug() << "warningbox udah dicreate";
+                //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
+            }
+
 
         }else{
             ui->labelBatasAtas->setStyleSheet(
@@ -2938,7 +2961,28 @@ void MainWindow::on_btnStart_clicked()
       //     return;
       // }
        if(ui->teNama->toPlainText().isEmpty()){
-           QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+           //QMessageBox::warning(this,"Peringatan","isi nama file dulu");
+           if (!mMsgisinamadulu) {
+               qDebug() << "warningbox baru akan dicreate";
+               mMsgisinamadulu = new msgisinamadulu(this);
+               connect(mMsgisinamadulu, &msgisinamadulu::btnYesClicked, this, &MainWindow::on_btnMsgisinamadulu_clicked);
+               connect(mMsgisinamadulu, &QObject::destroyed, [=]() mutable {
+                   qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
+                   mMsgisinamadulu = nullptr; // Set pointer to nullptr
+               });
+               mMsgisinamadulu->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+               mMsgisinamadulu->setAttribute(Qt::WA_TranslucentBackground);
+
+               mMsgisinamadulu->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+               mMsgisinamadulu->setAttribute(Qt::WA_TranslucentBackground);
+               mMsgisinamadulu->setWindowModality(Qt::ApplicationModal);
+               mMsgisinamadulu->setAttribute(Qt::WA_DeleteOnClose);
+               mMsgisinamadulu->show();
+           } else {
+               // Jika sudah ada, kirim notifikasi
+               qDebug() << "warningbox udah dicreate";
+               //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
+           }
            return;
        }
        if(m_serial && m_serial->isOpen()){
@@ -3473,7 +3517,8 @@ void MainWindow::on_btnTargetBebanRefresh_clicked()
        //ui->btnSelesai->setVisible(true);
        //ui->btnPause->setVisible(true);
 
-       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+       dataTx.targetBeban = ui->labelTargetBebanVal->text().toFloat();
+       float mtargetBeban =  dataTx.targetBeban;
        quint8 mperintahManual = 0; //
        quint8 mperintahAuto = 0; //stop auto
        quint8 mupdateData =12; //update target beban kan load cell
@@ -3715,6 +3760,24 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
     m_dataQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::on_btnMsgTargetercapai_clicked()
+{
+
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::on_btnMsgisinamadulu_clicked()
+{
+
 }
 
 /*****************************************************************************************************
