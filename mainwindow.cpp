@@ -240,12 +240,15 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
 
     if (!m_hasLastPlotPoint)
     {
-        const double xMargin = 1.0;
         const double yMargin = 1.0;
 
+        // X SELALU dimulai dari 0
+        // Minimal range awal = 0 ... 100 mm
+        m_mmMaxX = qMax(100.0, displacement);
+
         ui->plotmmgram->xAxis->setRange(
-            displacement - xMargin,
-            displacement + xMargin
+            0.0,
+            m_mmMaxX
         );
 
         ui->plotmmgram->yAxis->setRange(
@@ -283,29 +286,51 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
     // Perbesar axis hanya jika diperlukan
     //--------------------------------------------------
 
-    QCPRange xRange = ui->plotmmgram->xAxis->range();
     QCPRange yRange = ui->plotmmgram->yAxis->range();
 
     bool rangeChanged = false;
 
-    // Margin agar kurva tidak menempel di tepi
-    const double xMargin =
-        qMax(0.5, xRange.size() * 0.1);
+    //--------------------------------------------------
+    // X AXIS
+    // Selalu mulai dari 0.
+    // Upper range hanya boleh membesar.
+    //--------------------------------------------------
+
+    if (displacement > m_mmMaxX)
+    {
+        // Tambahkan margin 10% supaya titik tidak menempel
+        // pada sisi kanan plot
+        const double xMargin =
+            qMax(0.5, m_mmMaxX * 0.1);
+
+        m_mmMaxX = displacement + xMargin;
+
+        ui->plotmmgram->xAxis->setRange(
+            0.0,
+            m_mmMaxX
+        );
+    }
+    else
+    {
+        // Pastikan lower axis tetap 0
+        QCPRange currentXRange =
+            ui->plotmmgram->xAxis->range();
+
+        if (currentXRange.lower < 0.0)
+        {
+            ui->plotmmgram->xAxis->setRange(
+                0.0,
+                m_mmMaxX
+            );
+        }
+    }
+
+    //--------------------------------------------------
+    // Y AXIS
+    //--------------------------------------------------
 
     const double yMargin =
         qMax(0.5, yRange.size() * 0.1);
-
-    if (displacement < xRange.lower)
-    {
-        xRange.lower = displacement - xMargin;
-        rangeChanged = true;
-    }
-
-    if (displacement > xRange.upper)
-    {
-        xRange.upper = displacement + xMargin;
-        rangeChanged = true;
-    }
 
     if (mass < yRange.lower)
     {
@@ -321,7 +346,6 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
 
     if (rangeChanged)
     {
-        ui->plotmmgram->xAxis->setRange(xRange);
         ui->plotmmgram->yAxis->setRange(yRange);
     }
 
@@ -329,9 +353,10 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
     // Replot
     //--------------------------------------------------
 
-    ui->plotmmgram->replot(QCustomPlot::rpQueuedReplot);
+    ui->plotmmgram->replot(
+        QCustomPlot::rpQueuedReplot
+    );
 }
-
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -1977,6 +2002,9 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *plotmmgram)
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
     //plot->xAxis->setTicker(timeTicker);
+    //double xMax = qMax(100.0, displacement);
+    //ui->plotmmgram->xAxis->setRange(0, xMax);
+
     plotmmgram->xAxis->setRange(0, 100);//10000); //350);
     plotmmgram->axisRect()->setupFullAxesBox();
     //plot->yAxis->setRange(-1.0, 1.0);
@@ -2453,42 +2481,102 @@ void MainWindow::handleError(QSerialPort::SerialPortError error)
 ******************************************************************************************************/
 void MainWindow::realtimeDataSlot(double value)
 {
-    static QElapsedTimer plotClock;
-    static double lastPointKey = -1.0;
-    static QElapsedTimer replotTimer;
+    //--------------------------------------------------
+    // Timestamp awal
+    //--------------------------------------------------
 
-    if (!plotClock.isValid())
-        plotClock.start();
-    if (!replotTimer.isValid())
-        replotTimer.start();
+    static qint64 startTimeMs = -1;
 
-    const double key = plotClock.elapsed() / 1000.0;
+    if (startTimeMs < 0)
+        startTimeMs = QDateTime::currentMSecsSinceEpoch();
 
-    if (ui->plottsgram->graphCount() == 0) {
+    const qint64 currentTimeMs =
+        QDateTime::currentMSecsSinceEpoch();
+
+    const double key =
+        (currentTimeMs - startTimeMs) / 1000.0;
+
+
+    //--------------------------------------------------
+    // Pastikan graph tersedia
+    //--------------------------------------------------
+
+    if (ui->plottsgram->graphCount() == 0)
+    {
         ui->plottsgram->addGraph();
-        ui->plottsgram->graph(0)->setPen(QPen(QColor(40, 255, 255)));
-        ui->plottsgram->graph(0)->data()->setAutoSqueeze(false);
+
+        ui->plottsgram->graph(0)->setPen(
+            QPen(QColor(40, 255, 255))
+        );
+
+        ui->plottsgram->graph(0)
+            ->data()
+            ->setAutoSqueeze(false);
     }
 
-    if (lastPointKey < 0.0 || key - lastPointKey > 0.002) { // maks. sekitar 500 point/s
-        const double filteredValue = value;
-        QCPGraph *graph = ui->plottsgram->graph(0);
-        graph->addData(key, filteredValue);
 
-        // Layar hanya menampilkan 8 detik. Simpan sedikit margin saja di RAM,
-        // bukan seluruh data sejak aplikasi mulai berjalan.
-        graph->data()->removeBefore(key - TS_HISTORY_SECONDS);
-        lastPointKey = key;
-    }
+    //--------------------------------------------------
+    // Tambah data LANGSUNG ketika data queue diterima
+    //--------------------------------------------------
+
+    QCPGraph *graph =
+        ui->plottsgram->graph(0);
+
+    graph->addData(
+        key,
+        value
+    );
+
+
+    //--------------------------------------------------
+    // Batasi histori data di RAM
+    //--------------------------------------------------
+
+    graph->data()->removeBefore(
+        qMax(0.0,
+             key - TS_HISTORY_SECONDS)
+    );
+
+
+    //--------------------------------------------------
+    // Label axis
+    //--------------------------------------------------
 
     ui->plottsgram->xAxis->setLabel("Time (s)");
-    ui->plottsgram->yAxis->setLabel("load (kg)");
-    ui->plottsgram->xAxis->setRange(key, 8, Qt::AlignRight);
+    ui->plottsgram->yAxis->setLabel("Load (kg)");
 
-    if (replotTimer.elapsed() >= 5) { // maksimum sekitar 200 FPS
-        ui->plottsgram->replot(QCustomPlot::rpQueuedReplot);
-        replotTimer.restart();
+
+    //--------------------------------------------------
+    // X axis
+    // 0-8 detik pertama tidak pernah negatif.
+    // Setelah itu sliding window 8 detik.
+    //--------------------------------------------------
+
+    constexpr double DISPLAY_SECONDS = 8.0;
+
+    if (key <= DISPLAY_SECONDS)
+    {
+        ui->plottsgram->xAxis->setRange(
+            0.0,
+            DISPLAY_SECONDS
+        );
     }
+    else
+    {
+        ui->plottsgram->xAxis->setRange(
+            key - DISPLAY_SECONDS,
+            key
+        );
+    }
+
+
+    //--------------------------------------------------
+    // Plot LANGSUNG
+    //--------------------------------------------------
+
+    ui->plottsgram->replot(
+        QCustomPlot::rpQueuedReplot
+    );
 }
 
 /*****************************************************************************************************
