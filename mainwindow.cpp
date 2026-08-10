@@ -243,8 +243,8 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
         const double yMargin = 1.0;
 
         // X SELALU dimulai dari 0
-        // Minimal range awal = 0 ... 100 mm
-        m_mmMaxX = qMax(100.0, displacement);
+        // Minimal range awal = 0 ... 5 mm
+        m_mmMaxX = qMax(0.1, displacement);
 
         ui->plotmmgram->xAxis->setRange(
             0.0,
@@ -647,7 +647,7 @@ void MainWindow::modeBegin()
 
     ui->serialPortInfoListBox->setEnabled(true);
 
-    ui->labelTargetBebanVal->setEnabled(true);   //----- untuk entry target beban
+    ui->labelTargetBebanVal->setEnabled(false);   //----- untuk entry target beban
     ui->btnTargetBebanRefresh->setEnabled(false);
     ui->btnTera->setEnabled(false);
     ui->btnResetEncoder->setEnabled(false);
@@ -715,7 +715,7 @@ void MainWindow::modeLoadPort()
     ui->btnRefreshSerialPort->setVisible(true);  //----->> tetap aktif
     ui->serialPortInfoListBox->setEnabled(true); //----->> tetap aktif
 
-    ui->labelTargetBebanVal->setEnabled(true);   //----- untuk entry target beban
+    ui->labelTargetBebanVal->setEnabled(false);   //----- untuk entry target beban
     ui->btnTargetBebanRefresh->setEnabled(false);
     ui->btnTera->setEnabled(false);
     ui->btnResetEncoder->setEnabled(false);
@@ -938,8 +938,8 @@ void MainWindow::modeResumed()
     ui->btnRefreshSerialPort->setVisible(true);
     ui->serialPortInfoListBox->setEnabled(false);
 
-    ui->labelTargetBebanVal->setEnabled(false);
-    ui->btnTargetBebanRefresh->setEnabled(false);
+    ui->labelTargetBebanVal->setEnabled(true);
+    ui->btnTargetBebanRefresh->setEnabled(true);
     ui->btnTera->setEnabled(false);
     ui->btnResetEncoder->setEnabled(false);
     ui->btnExit->setEnabled(false);
@@ -967,6 +967,7 @@ void MainWindow::modeResumed()
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 
+    dataTx.targetBeban = ui->labelTargetBebanVal->text().toFloat();
 }
 
 //---------------------------------------------------------------------------------------
@@ -990,7 +991,7 @@ void MainWindow::modeEnd()
     ui->btnRefreshSerialPort->setVisible(true);  //--->> refresh port
     ui->serialPortInfoListBox->setEnabled(true); //--->> untuk memilih port
 
-    ui->labelTargetBebanVal->setEnabled(false);
+    ui->labelTargetBebanVal->setEnabled(true);
     ui->btnTargetBebanRefresh->setEnabled(true);
     ui->btnTera->setEnabled(true);
     ui->btnResetEncoder->setEnabled(true);
@@ -2654,12 +2655,12 @@ void MainWindow::on_btnResume_clicked()
 
     if(m_serial && m_serial->isOpen()){
        modeResumed();
-       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+       dataTx.targetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
        quint8 mperintahAuto = 1; //start auto
        quint8 mupdateData = 0;
 
-       sendData(mtargetBeban,
+       sendData(dataTx.targetBeban,
                 mperintahManual,
                 mperintahAuto,
                 mupdateData);
@@ -2750,7 +2751,7 @@ void MainWindow::processDataQueue()
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
-        if(dataTerima.bebanAktual >= dataTx.targetBeban){
+        if(dataTerima.bebanAktual >= dataTx.targetBeban){ //ui->labelTargetBebanVal->text().toFloat()){
             ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
@@ -2797,6 +2798,7 @@ void MainWindow::processDataQueue()
                 //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
             }
 
+            modeEnd();
 
         }else{
             ui->labelBatasAtas->setStyleSheet(
@@ -2941,6 +2943,11 @@ void MainWindow::on_btnTera_clicked()
 
        ui->labelLoadValue->setText("0.0000");
     }
+
+    clearGraph();
+    m_dataQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 }
 
 
@@ -2968,6 +2975,10 @@ void MainWindow::on_btnResetEncoder_clicked()
 
        ui->labelDisplacementValue->setText("0.0000");
     }
+    clearGraph();
+    m_dataQueue.clear();
+    dataTerima = DataTerima{};
+    m_rxBuffer.clear();
 }
 
 /*****************************************************************************************************
@@ -3856,7 +3867,7 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnMsgTargetercapai_clicked()
 {
-
+   modePaused();
 }
 
 /*****************************************************************************************************

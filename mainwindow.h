@@ -301,6 +301,7 @@ private:
     void modeResumed();
     void modeEnd();
 
+    double m_mmMaxX = 100.0;
     msglogout *mMsgLogout =  nullptr;
     msgendukur *mMsgEndUkur = nullptr;
     msgtargetercapai *mMsgTargeTercapai = nullptr;

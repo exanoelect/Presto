@@ -19,7 +19,7 @@ msgtargetercapai::~msgtargetercapai()
 void msgtargetercapai::on_btnYes_clicked()
 {
    emit btnYesClicked();
-    this->deleteLater();
+   this->deleteLater();
 }
 
 

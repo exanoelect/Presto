@@ -374,7 +374,7 @@ public:
         frameLeft2->setFrameShadow(QFrame::Raised);
         labelLoadValue = new QLabel(frameLeft2);
         labelLoadValue->setObjectName(QStringLiteral("labelLoadValue"));
-        labelLoadValue->setGeometry(QRect(20, 90, 301, 91));
+        labelLoadValue->setGeometry(QRect(20, 90, 301, 100));
         labelLoadValue->setStyleSheet(QLatin1String("background-color: #FF7300;\n"
 "font: 72pt \"MS Shell Dlg 2\";"));
         labelLoadValue->setAlignment(Qt::AlignCenter);
