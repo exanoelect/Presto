@@ -2948,6 +2948,18 @@ void MainWindow::on_btnTera_clicked()
     m_dataQueue.clear();
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
+
+    ui->labelBatasAtas->setStyleSheet(
+        "QLabel {"
+        "background-color: rgb(143, 255, 248);"
+        "color: black;"
+        "font-size: 36px;"
+        "font-weight: bold;"
+        "font-family: Arial;"
+        "}"
+    );
+
+   ui->labelBatasAtas->setText("BATAS ATAS");
 }
 
 
