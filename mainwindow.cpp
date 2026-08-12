@@ -523,7 +523,7 @@ void MainWindow::sendData(quint32 targetBeban,
     if (strRcv.length() >= 5)
         strRcv.remove(0, 5); // buang dua byte header dari tampilan debug
 
-    ui->logSerialTextEdit->setText("TX:" + strRcv);
+    ui->logSerialTX->setText("TX:" + strRcv);
 }
 
 //---------------------------------------------------------------------------------------
