@@ -56,5 +56,6 @@
         <file>exit6.png</file>
         <file>refresh1.png</file>
         <file>refresh2.png</file>
+        <file>resume1.png</file>
     </qresource>
 </RCC>
