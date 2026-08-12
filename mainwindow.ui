@@ -1161,9 +1161,27 @@ border-radius: 30px;</string>
    <widget class="QLabel" name="logSerialTextEdit">
     <property name="geometry">
      <rect>
+      <x>720</x>
+      <y>970</y>
+      <width>700</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(247, 255, 237);
+font: 28pt &quot;MS Shell Dlg 2&quot;;
+border-radius: 30px;</string>
+    </property>
+    <property name="text">
+     <string>000</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="logSerialTX">
+    <property name="geometry">
+     <rect>
       <x>10</x>
       <y>970</y>
-      <width>1411</width>
+      <width>700</width>
       <height>61</height>
      </rect>
     </property>

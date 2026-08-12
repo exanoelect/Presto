@@ -183,6 +183,7 @@ private slots:
     void on_btnExit_clicked();
     void on_btnAddNewMeasurement_clicked();
     void on_btnMsgTargetercapai_clicked();
+    void on_btnMsgTargetTercapaiResume_clicked();
     void on_btnMsgisinamadulu_clicked();
 
     //1...............

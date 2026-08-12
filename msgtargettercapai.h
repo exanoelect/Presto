@@ -20,9 +20,12 @@ public:
 
 signals:
     void btnYesClicked();
+    void btnResumeClicked();
 
 private slots:
     void on_btnYes_clicked();
+
+    void on_btnResume_clicked();
 
 private:
     Ui::msgtargetercapai *ui;

@@ -20,7 +20,7 @@
    <widget class="QPushButton" name="btnYes">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>290</x>
       <y>70</y>
       <width>191</width>
       <height>181</height>
@@ -88,9 +88,9 @@ border-radius: 30px;</string>
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>290</x>
       <y>260</y>
-      <width>91</width>
+      <width>181</width>
       <height>41</height>
      </rect>
     </property>
@@ -102,7 +102,56 @@ border-radius: 30px;</string>
 color:white;</string>
     </property>
     <property name="text">
-     <string>OK</string>
+     <string>SELESAI</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnResume">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>241</width>
+      <height>241</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border:none;</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="img/img.qrc">
+      <normaloff>:/resume1.png</normaloff>:/resume1.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>175</width>
+      <height>175</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>260</y>
+      <width>181</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 75 32pt &quot;Roboto Black&quot;;
+color:white;</string>
+    </property>
+    <property name="text">
+     <string>RESUME</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -112,6 +161,8 @@ color:white;</string>
    <zorder>btnYes</zorder>
    <zorder>label</zorder>
    <zorder>label_4</zorder>
+   <zorder>btnResume</zorder>
+   <zorder>label_5</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

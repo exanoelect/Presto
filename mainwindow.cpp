@@ -514,6 +514,16 @@ void MainWindow::sendData(quint32 targetBeban,
     packet[9] = char(0x00);      // cadangan
 
     m_serial->write(packet);
+
+    QString strRcv;
+    for (unsigned char c : packet) {
+        strRcv += QString("%1 ").arg(c, 2, 16, QLatin1Char('0')).toUpper();
+    }
+
+    if (strRcv.length() >= 5)
+        strRcv.remove(0, 5); // buang dua byte header dari tampilan debug
+
+    ui->logSerialTextEdit->setText(strRcv);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1147,6 +1157,7 @@ void MainWindow::fillPortsInfo()
 
     ui->serialPortInfoListBox->addItem(tr("Custom"));
 }
+
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -1374,9 +1385,26 @@ void MainWindow::setWidgetPosition()
     ui->page->resize(stackPageSize);
     ui->page_4->resize(stackPageSize);
 
-    ui->logSerialTextEdit->setGeometry(margin,
-                                       bodyY + stackH + gap,
-                                       leftW,
+    // Baris log serial dibagi dua secara fleksibel:
+    // logSerialTX di kiri, logSerialTextEdit di kanan.
+    // Lebar keduanya selalu mengikuti lebar area grafik (leftW).
+    const int serialLogY = bodyY + stackH + gap;
+    const int serialLogGap = gap;
+    const int serialLogUsableW = qMax(2, leftW - serialLogGap);
+    const int serialTxW = serialLogUsableW / 2;
+    const int serialRxW = serialLogUsableW - serialTxW;
+
+    ui->logSerialTX->setMinimumSize(0, 0);
+    ui->logSerialTextEdit->setMinimumSize(0, 0);
+
+    ui->logSerialTX->setGeometry(margin,
+                                 serialLogY,
+                                 serialTxW,
+                                 logH);
+
+    ui->logSerialTextEdit->setGeometry(margin + serialTxW + serialLogGap,
+                                       serialLogY,
+                                       serialRxW,
                                        logH);
 
     // -------------------------------------------------------------------------
@@ -1747,7 +1775,8 @@ void MainWindow::setWidgetPosition()
                 ? QStringLiteral("COM99")
                 : ui->serialPortInfoListBox->currentText(),         48, 13, false, 0.90, 0.80);
 
-    // Log dan judul/footer grafik
+    // Log TX/RX dan judul/footer grafik
+    fitFont(ui->logSerialTX,       ui->logSerialTX->text(),       37, 11, false, 0.98, 0.85);
     fitFont(ui->logSerialTextEdit, ui->logSerialTextEdit->text(), 37, 11, false, 0.98, 0.85);
     fitFont(ui->labelHeadmmGram, QStringLiteral("Displacement (mm) vs Load (gram)"), 16, 9);
     fitFont(ui->labelHeadTsGram, QStringLiteral("timeStamps vs Gram"),                 16, 9);
@@ -1782,6 +1811,7 @@ void MainWindow::setWidgetPosition()
     // Terakhir: kunci tombol Exit ke area window yang BENAR-BENAR terlihat.
     positionExitButton();
 }
+
 
 //---------------------------------------------------------------------------------------
 // btnExit overlay: tidak memakai widthScreen dan tidak bergantung pada parent frame0.
@@ -2752,7 +2782,7 @@ void MainWindow::processDataQueue()
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
         if(dataTerima.bebanAktual >= dataTx.targetBeban){ //ui->labelTargetBebanVal->text().toFloat()){
-            ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
+            //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
@@ -2780,6 +2810,7 @@ void MainWindow::processDataQueue()
                 qDebug() << "warningbox baru akan dicreate";
                 mMsgTargeTercapai = new msgtargetercapai(this);
                 connect(mMsgTargeTercapai, &msgtargetercapai::btnYesClicked, this, &MainWindow::on_btnMsgTargetercapai_clicked);
+                connect(mMsgTargeTercapai, &msgtargetercapai::btnResumeClicked, this, &MainWindow::on_btnMsgTargetTercapaiResume_clicked);
                 connect(mMsgTargeTercapai, &QObject::destroyed, [=]() mutable {
                     qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
                     mMsgTargeTercapai = nullptr; // Set pointer to nullptr
@@ -2818,7 +2849,7 @@ void MainWindow::processDataQueue()
             break;
 
         case 1: // atas
-            ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
+            //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
@@ -2831,7 +2862,7 @@ void MainWindow::processDataQueue()
             break;
 
         case 2: // bawah
-            ui->labelBatasBawah->setText(QString::number(dataTerima.bebanAktual));
+            //ui->labelBatasBawah->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
@@ -2844,8 +2875,8 @@ void MainWindow::processDataQueue()
             break;
 
         default:
-            ui->labelBatasAtas->setText("");
-            ui->labelBatasBawah->setText("");
+            //ui->labelBatasAtas->setText("");
+            //ui->labelBatasBawah->setText("");
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #14A0F1;"
@@ -3879,7 +3910,32 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnMsgTargetercapai_clicked()
 {
-   modePaused();
+    modePaused();
+}
+
+/*****************************************************************************************************
+**--------------------------------------------------------------------------------------------------**
+**--------------------------------------------------------------------------------------------------**
+******************************************************************************************************/
+void MainWindow::on_btnMsgTargetTercapaiResume_clicked()
+{
+    if(!timerStopWatch->isActive()) timerStopWatch->start(10);
+    setQueueProcessingEnabled(true);
+
+    if(m_serial && m_serial->isOpen()){
+       modeResumed();
+       dataTx.targetBeban = ui->labelTargetBebanVal->text().toFloat();
+       quint8 mperintahManual = 0; //
+       quint8 mperintahAuto = 1; //start auto
+       quint8 mupdateData = 0;
+
+       sendData(dataTx.targetBeban,
+                mperintahManual,
+                mperintahAuto,
+                mupdateData);
+    }
+
+    modeResumed();
 }
 
 /*****************************************************************************************************
