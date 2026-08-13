@@ -95,7 +95,7 @@ public:
     QLabel *labelCurrentDate;
     QLabel *labelJudul;
     QPushButton *btnExit;
-    QLabel *logSerialTextEdit;
+    QLabel *logSerialRX;
     QLabel *logSerialTX;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -454,10 +454,10 @@ public:
         btnExit->setGeometry(QRect(1850, 0, 51, 51));
         btnExit->setStyleSheet(QLatin1String("border-image: url(:/application-exit.png);\n"
 "border-radius: 30px;"));
-        logSerialTextEdit = new QLabel(centralWidget);
-        logSerialTextEdit->setObjectName(QStringLiteral("logSerialTextEdit"));
-        logSerialTextEdit->setGeometry(QRect(720, 970, 700, 61));
-        logSerialTextEdit->setStyleSheet(QLatin1String("background-color: rgb(247, 255, 237);\n"
+        logSerialRX = new QLabel(centralWidget);
+        logSerialRX->setObjectName(QStringLiteral("logSerialRX"));
+        logSerialRX->setGeometry(QRect(720, 970, 700, 61));
+        logSerialRX->setStyleSheet(QLatin1String("background-color: rgb(247, 255, 237);\n"
 "font: 28pt \"MS Shell Dlg 2\";\n"
 "border-radius: 30px;"));
         logSerialTX = new QLabel(centralWidget);
@@ -537,7 +537,7 @@ public:
         labelCurrentDate->setText(QApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:18pt;\">Current Date</span></p></body></html>", nullptr));
         labelJudul->setText(QApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:48pt;\">MESIN UJI TEKAN</span></p></body></html>", nullptr));
         btnExit->setText(QString());
-        logSerialTextEdit->setText(QApplication::translate("MainWindow", "000", nullptr));
+        logSerialRX->setText(QApplication::translate("MainWindow", "000", nullptr));
         logSerialTX->setText(QApplication::translate("MainWindow", "000", nullptr));
     } // retranslateUi
 

@@ -132,6 +132,7 @@ debug/qrc_img.cpp: img/img.qrc \
 		img/prestoled.png \
 		img/pause2.png \
 		img/mulai4.png \
+		img/resume1.png \
 		img/refresh1.png \
 		img/down2.png \
 		img/stop4.png \
@@ -725,6 +726,7 @@ debug/moc_mainwindow.cpp: C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QMa
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QQueue \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QByteArray \
 		msgtargettercapai.h \
+		msgisinamadulu.h \
 		mainwindow.h \
 		debug/moc_predefs.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/bin/moc.exe
@@ -2750,6 +2752,7 @@ debug/main.o: main.cpp mainwindow.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QQueue \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QByteArray \
 		msgtargettercapai.h \
+		msgisinamadulu.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QApplication
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\main.o main.cpp
 
@@ -3278,6 +3281,7 @@ debug/mainwindow.o: mainwindow.cpp mainwindow.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QQueue \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QByteArray \
 		msgtargettercapai.h \
+		msgisinamadulu.h \
 		ui_mainwindow.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtGui/QIcon \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QApplication \
@@ -4312,7 +4316,30 @@ debug/msgisinamadulu.o: msgisinamadulu.cpp msgisinamadulu.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtGui/qicon.h \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QDebug \
 		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QtDebug \
-		ui_msgisinamadulu.h
+		ui_msgisinamadulu.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/QVariant \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtGui/QIcon \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QApplication \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qapplication.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/qcoreapplication.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtCore/qeventloop.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qdesktopwidget.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtGui/qguiapplication.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtGui/qinputmethod.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QLabel \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qlabel.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qframe.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QMenuBar \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qmenubar.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qmenu.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qaction.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qactiongroup.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QPushButton \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qpushbutton.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qabstractbutton.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QStatusBar \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/qstatusbar.h \
+		C:/Qt/Qt5.11.2/5.11.2/mingw53_32/include/QtWidgets/QWidget
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\msgisinamadulu.o msgisinamadulu.cpp
 
 debug/qrc_img.o: debug/qrc_img.cpp 
