@@ -2781,6 +2781,7 @@ void MainWindow::processDataQueue()
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
+        /*
         if(dataTerima.bebanAktual >= dataTx.targetBeban){ //ui->labelTargetBebanVal->text().toFloat()){
             //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
@@ -2792,7 +2793,41 @@ void MainWindow::processDataQueue()
                 "font-family: Arial;"
                 "}"
             );
+        }
+*/
 
+
+
+      //  }
+    /*else{
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: rgb(143, 255, 248);"
+                "color: black;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
+        }
+        */
+
+        // Limit switch label.
+        switch (dataTerima.limitSwitch) {
+        case 0: // normal
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: rgb(143, 255, 248);"
+                "color: black;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}");
+            break;
+
+        case 1: // atas
+            //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
+            {
             timerStopWatch->stop();
             setQueueProcessingEnabled(false);
 
@@ -2830,26 +2865,6 @@ void MainWindow::processDataQueue()
             }
 
             modeEnd();
-
-        }else{
-            ui->labelBatasAtas->setStyleSheet(
-                "QLabel {"
-                "background-color: rgb(143, 255, 248);"
-                "color: black;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
-                "}"
-            );
-        }
-
-        // Limit switch label.
-        switch (dataTerima.limitSwitch) {
-        case 0: // normal
-            break;
-
-        case 1: // atas
-            //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
@@ -2859,6 +2874,7 @@ void MainWindow::processDataQueue()
                 "font-family: Arial;"
                 "}"
             );
+            }
             break;
 
         case 2: // bawah
