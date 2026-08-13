@@ -224,10 +224,13 @@ private:
     // RX/plot tetap aktif selama mode manual.
     bool m_manualMovementActive = false;
 
-    // Latch satu kejadian limit atas.
-    // Selama limitSwitch tetap 1, dialog target tercapai hanya boleh muncul sekali.
-    // Latch di-reset setelah limitSwitch kembali 0.
+    // Latch satu kejadian limit atas untuk indikator limit.
     bool m_limitAtasLatched = false;
+
+    // Deteksi akhir pengukuran AUTO:
+    // popup hanya boleh muncul setelah autoFlag pernah TRUE lalu menjadi FALSE.
+    bool m_autoMeasurementWasActive = false;
+    bool m_autoCompletionHandled = false;
 
     bool startRcvUart;
 

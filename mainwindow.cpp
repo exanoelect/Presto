@@ -1963,7 +1963,11 @@ bool MainWindow::parsePacket(const QByteArray &packet, DataTerima &parsedData) c
     parsedData.limitSwitch = p[8];
     unpackFlag(p[9], parsedData);
 
-    //qDebug() << "RAW =" << packet.toHex(' ').toUpper();
+    qDebug() << "up " << parsedData.autoFlag;
+
+
+
+    qDebug() << "RAW =" << packet.toHex(' ').toUpper();
     //qDebug() << "p[8] LIMIT =" << static_cast<int>(p[8]);
     //qDebug() << "p[9] FLAG  =" << static_cast<int>(p[9]);
     //qDebug() << "parsed LS =" << static_cast<int>(parsedData.limitSwitch);
@@ -2711,6 +2715,11 @@ void MainWindow::on_btnResume_clicked()
     if(!timerStopWatch->isActive()) timerStopWatch->start(10);
     setQueueProcessingEnabled(true);
 
+    // Siapkan deteksi untuk siklus AUTO berikutnya.
+    // Tetap tunggu autoFlag == true dari Arduino sebelum false dianggap selesai.
+    m_autoMeasurementWasActive = false;
+    m_autoCompletionHandled = false;
+
     //-----------------
     /*
     modeRunning();
@@ -2838,11 +2847,76 @@ void MainWindow::processDataQueue()
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
+
+        // -------------------------------------------------------------
+        // DETEKSI PENGUKURAN AUTO SELESAI
+        // -------------------------------------------------------------
+        // Jangan trigger popup hanya karena autoFlag == false.
+        // autoFlag memang false saat idle/startup/manual.
+        //
+        // Popup hanya muncul pada urutan:
+        //     autoFlag true  -> AUTO benar-benar aktif
+        //     autoFlag false -> AUTO selesai
+        if (dataTerima.autoFlag)
+        {
+            m_autoMeasurementWasActive = true;
+            m_autoCompletionHandled = false;
+        }
+        else if (m_autoMeasurementWasActive && !m_autoCompletionHandled)
+        {
+            // Falling event TRUE -> FALSE: pengukuran AUTO selesai.
+            m_autoCompletionHandled = true;
+            m_autoMeasurementWasActive = false;
+
+            qDebug() << "AUTO selesai: autoFlag TRUE -> FALSE";
+
+            if (timerStopWatch->isActive())
+                timerStopWatch->stop();
+
+            // Streaming RX / label / log / plot tetap aktif.
+            setQueueProcessingEnabled(true);
+            m_manualMovementActive = false;
+
+            if (!mMsgTargeTercapai)
+            {
+                qDebug() << "mMsgTargeTercapai dibuat karena AUTO selesai";
+
+                mMsgTargeTercapai = new msgtargetercapai(this);
+
+                connect(mMsgTargeTercapai,
+                        &msgtargetercapai::btnYesClicked,
+                        this,
+                        &MainWindow::on_btnMsgTargetercapai_clicked);
+
+                connect(mMsgTargeTercapai,
+                        &msgtargetercapai::btnResumeClicked,
+                        this,
+                        &MainWindow::on_btnMsgTargetTercapaiResume_clicked);
+
+                connect(mMsgTargeTercapai,
+                        &QObject::destroyed,
+                        [this]() {
+                            qDebug() << "mMsgTargeTercapai destroyed. Pointer = nullptr";
+                            mMsgTargeTercapai = nullptr;
+                        });
+
+                mMsgTargeTercapai->setWindowFlags(
+                    Qt::Dialog | Qt::FramelessWindowHint);
+                mMsgTargeTercapai->setAttribute(
+                    Qt::WA_TranslucentBackground);
+                mMsgTargeTercapai->setWindowModality(
+                    Qt::ApplicationModal);
+                mMsgTargeTercapai->setAttribute(
+                    Qt::WA_DeleteOnClose);
+                mMsgTargeTercapai->show();
+            }
+        }
+
         // Limit switch label.
         switch (dataTerima.limitSwitch) {
         case 0: // normal
-            // Limit atas sudah lepas. Izinkan kejadian limit atas berikutnya
-            // memunculkan dialog kembali.
+            // Hanya reset indikator/latch limit.
+            // Popup target tercapai tidak lagi bergantung pada limitSwitch.
             m_limitAtasLatched = false;
 
             ui->labelBatasAtas->setStyleSheet(
@@ -2864,83 +2938,27 @@ void MainWindow::processDataQueue()
             break;
 
         case 1: // batas atas
-        {
-            // Label harus tetap merah selama limitSwitch masih 1.
-            ui->labelBatasAtas->setStyleSheet(
-                "QLabel {"
-                "background-color: #D71920;"
-                "color: white;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
-                "}"
-            );
-
-            // Streaming RX -> queue -> label/log -> plot tetap aktif.
-            setQueueProcessingEnabled(true);
-
-            // Satu kondisi limit yang terus bernilai 1 hanya diproses sekali.
-            // Setelah dialog ditutup/dihapus, frame berikutnya dengan limitSwitch == 1
-            // tidak akan membuat msgtargettercapai muncul lagi.
-            if (!m_limitAtasLatched)
             {
-                m_limitAtasLatched = true;
+               // Label harus tetap merah selama limitSwitch masih 1.
+               ui->labelBatasAtas->setStyleSheet(
+                   "QLabel {"
+                   "background-color: #D71920;"
+                   "color: white;"
+                   "font-size: 36px;"
+                   "font-weight: bold;"
+                   "font-family: Arial;"
+                   "}"
+               );
 
-                qDebug() << "Atas sentuh - event pertama";
-
-                // Hanya stopwatch yang dihentikan.
-                if (timerStopWatch->isActive())
-                    timerStopWatch->stop();
-
-                m_manualMovementActive = false;
-
-                // Hentikan motor sekali saat limit pertama kali terdeteksi.
-                if (m_serial && m_serial->isOpen())
-                {
-                    const float mtargetBeban =
-                        ui->labelTargetBebanVal->text().toFloat();
-
-                    sendData(mtargetBeban,
-                             3, // manual STOP
-                             0,
-                             0);
-                }
-
-                // Tampilkan dialog hanya sekali untuk satu kejadian limit atas.
-                if (!mMsgTargeTercapai)
-                {
-                    qDebug() << "warningbox baru akan dicreate";
-
-                    mMsgTargeTercapai = new msgtargetercapai(this);
-
-                    connect(mMsgTargeTercapai,&msgtargetercapai::btnYesClicked,
-                            this,&MainWindow::on_btnMsgTargetercapai_clicked);
-
-                    connect(mMsgTargeTercapai,&msgtargetercapai::btnResumeClicked,
-                            this,&MainWindow::on_btnMsgTargetTercapaiResume_clicked);
-
-                    connect(mMsgTargeTercapai,&QObject::destroyed,
-                            [this]() {qDebug()<< "mMsgTargeTercapai destroyed. Pointer = nullptr";
-                                mMsgTargeTercapai = nullptr;
-                            });
-
-                    mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
-                    mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
-                    mMsgTargeTercapai->setWindowModality( Qt::ApplicationModal);
-                    mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
-                    mMsgTargeTercapai->show();
-                }
-            }
-
-            // PENTING:
-            // Jangan modeEnd() di sini.
-            // modeEnd() baru dilakukan saat tombol SELESAI pada
-            // msgtargettercapai diklik.
-            break;
-        }
-
+               // PENTING:
+               // Jangan modeEnd() di sini.
+               // modeEnd() baru dilakukan saat tombol SELESAI pada
+               // msgtargettercapai diklik.
+               break;
+             }
 
         case 2: // batas bawah
+            /*
             if (m_manualMovementActive) {
                 m_manualMovementActive = false;
 
@@ -2954,6 +2972,7 @@ void MainWindow::processDataQueue()
                          0,
                          0);
             }
+            */
 
             ui->labelBatasBawah->setStyleSheet(
                 "QLabel {"
@@ -3187,6 +3206,10 @@ void MainWindow::on_btnStart_clicked()
 
     startRcvUart = true;
     m_manualMovementActive = false;
+
+    // Arm deteksi akhir AUTO untuk pengukuran baru.
+    m_autoMeasurementWasActive = false;
+    m_autoCompletionHandled = false;
 
     logFilePath = logDir.filePath(ui->teNama->toPlainText() + ".csv");// + "_" + strTanggal + ".csv");
     qDebug() << "Path " << logFilePath;
@@ -4022,6 +4045,10 @@ void MainWindow::on_btnMsgTargetTercapaiResume_clicked()
 {
     if(!timerStopWatch->isActive()) timerStopWatch->start(10);
     setQueueProcessingEnabled(true);
+
+    // Siapkan siklus AUTO berikutnya.
+    m_autoMeasurementWasActive = false;
+    m_autoCompletionHandled = false;
 
     if(m_serial && m_serial->isOpen()){
        modeResumed();
