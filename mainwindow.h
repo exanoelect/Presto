@@ -63,9 +63,9 @@ struct DataTerima {
 
     quint8 limitSwitch = 0;
 
-    bool motorStatus = false;
-    bool limitAtas = false;
-    bool limitBawah = false;
+    quint8 motorStatus = 0;   // 2 bit: 0..3
+    bool newtarget1 = false;
+    bool newtarget2 = false;
     bool zeroLoadcell = false;
     bool zeroEncoder = false;
     bool updateData = false;

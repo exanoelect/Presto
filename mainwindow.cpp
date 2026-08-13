@@ -1963,19 +1963,55 @@ bool MainWindow::parsePacket(const QByteArray &packet, DataTerima &parsedData) c
     parsedData.limitSwitch = p[8];
     unpackFlag(p[9], parsedData);
 
+    //qDebug() << "RAW =" << packet.toHex(' ').toUpper();
+    //qDebug() << "p[8] LIMIT =" << static_cast<int>(p[8]);
+    //qDebug() << "p[9] FLAG  =" << static_cast<int>(p[9]);
+    //qDebug() << "parsed LS =" << static_cast<int>(parsedData.limitSwitch);
     return true;
 }
 
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 void MainWindow::unpackFlag(quint8 flag, DataTerima &parsedData) const
 {
-    parsedData.motorStatus  = flag & (1 << 0);
-    parsedData.limitAtas    = flag & (1 << 1);
-    parsedData.limitBawah   = flag & (1 << 2);
-    parsedData.zeroLoadcell = flag & (1 << 3);
-    parsedData.zeroEncoder  = flag & (1 << 4);
-    parsedData.updateData   = flag & (1 << 5);
-    parsedData.autoFlag     = flag & (1 << 6);
+    // Bit 0-1 = motorStatus (2 bit, nilai 0..3)
+    parsedData.motorStatus = flag & 0x03;
+
+    // Bit 2
+    parsedData.newtarget1 = (flag >> 2) & 0x01;
+
+    // Bit 3
+    parsedData.newtarget2 = (flag >> 3) & 0x01;
+
+    // Bit 4
+    parsedData.zeroLoadcell = (flag >> 4) & 0x01;
+
+    // Bit 5
+    parsedData.zeroEncoder = (flag >> 5) & 0x01;
+
+    // Bit 6
+    parsedData.updateData = (flag >> 6) & 0x01;
+
+    // Bit 7
+    parsedData.autoFlag = (flag >> 7) & 0x01;
 }
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+
+/*void MainWindow::unpackFlag(quint8 flag, DataTerima &parsedData) const
+{
+    parsedData.motorStatus  = (flag >> 0) & 0x01;
+    parsedData.zeroLoadcell = (flag >> 3) & 0x01;
+    parsedData.zeroEncoder  = (flag >> 4) & 0x01;
+    parsedData.updateData   = (flag >> 5) & 0x01;
+    parsedData.autoFlag     = (flag >> 6) & 0x01;
+
+    // Limit switch berada di bit 7
+    parsedData.limitSwitch  = (flag >> 7) & 0x01;
+}*/
 
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -2683,12 +2719,43 @@ void MainWindow::on_btnResume_clicked()
     if(!timerStopWatch->isActive()) timerStopWatch->start(10);
     setQueueProcessingEnabled(true);
 
+    //-----------------
+    /*
+    modeRunning();
+    QTimer::singleShot(2000, this, [this](){
+          qDebug() << "Startn";
+          //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
+          //setupRealtimeDataDemo(ui->plotmmgram);
+          //setupRealtimeDataDemoTs(ui->plottsgram);
+
+          testRunning = true;
+          elapsedTimer.start();      // mulai stopwatch
+
+          //elapsedTimer.restart();
+          if(!timerStopWatch->isActive()) timerStopWatch->start(10);
+          setQueueProcessingEnabled(true);
+
+          float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+          quint8 mperintahManual = 0;
+          quint8 mperintahAuto = 1;
+          quint8 mupdateData = 1;
+
+          sendData(mtargetBeban,
+                   mperintahManual,
+                   mperintahAuto,
+                   mupdateData);
+         });
+     }
+     */
+
+    //-----------------
+
     if(m_serial && m_serial->isOpen()){
        modeResumed();
        dataTx.targetBeban = ui->labelTargetBebanVal->text().toFloat();
        quint8 mperintahManual = 0; //
        quint8 mperintahAuto = 1; //start auto
-       quint8 mupdateData = 0;
+       quint8 mupdateData = 1;
 
        sendData(dataTx.targetBeban,
                 mperintahManual,
@@ -2753,20 +2820,18 @@ void MainWindow::processDataQueue()
         //------------------------------------
         // Debug data hasil parsing
         //------------------------------------
-
         /*
         qDebug() << "==========================";
         qDebug() << "Beban        :" << dataTerima.bebanAktual;
         qDebug() << "Perpindahan  :" << dataTerima.perpindahan;
         qDebug() << "Limit Switch :" << dataTerima.limitSwitch;
         qDebug() << "Motor        :" << dataTerima.motorStatus;
-        qDebug() << "Limit Atas   :" << dataTerima.limitAtas;
-        qDebug() << "Limit Bawah  :" << dataTerima.limitBawah;
         qDebug() << "Zero Loadcell:" << dataTerima.zeroLoadcell;
         qDebug() << "Zero Encoder :" << dataTerima.zeroEncoder;
         qDebug() << "Update Data  :" << dataTerima.updateData;
         qDebug() << "Auto Flag    :" << dataTerima.autoFlag;
-*/
+        */
+
 
         // Plot langsung dari data hasil parsing. Tidak ada lagi QVector histori
         // yang terus membesar dan tidak ada copy seluruh data pada setiap sample.
@@ -2781,37 +2846,6 @@ void MainWindow::processDataQueue()
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
 
-        /*
-        if(dataTerima.bebanAktual >= dataTx.targetBeban){ //ui->labelTargetBebanVal->text().toFloat()){
-            //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
-            ui->labelBatasAtas->setStyleSheet(
-                "QLabel {"
-                "background-color: #D71920;"
-                "color: white;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
-                "}"
-            );
-        }
-*/
-
-
-
-      //  }
-    /*else{
-            ui->labelBatasAtas->setStyleSheet(
-                "QLabel {"
-                "background-color: rgb(143, 255, 248);"
-                "color: black;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
-                "}"
-            );
-        }
-        */
-
         // Limit switch label.
         switch (dataTerima.limitSwitch) {
         case 0: // normal
@@ -2825,55 +2859,55 @@ void MainWindow::processDataQueue()
                 "}");
             break;
 
-        case 1: // atas
-            //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
-            {
-            timerStopWatch->stop();
-            setQueueProcessingEnabled(false);
+        case 1: // atas             //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
+             {
+            qDebug() << "Atas sentuh";
+                timerStopWatch->stop();
+                setQueueProcessingEnabled(false);
 
-            float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-            quint8 mperintahManual = 3; //stop
-            quint8 mperintahAuto = 0;
-            quint8 mupdateData = 0;
+                float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+                quint8 mperintahManual = 3; //stop
+                quint8 mperintahAuto = 0;
+                quint8 mupdateData = 0;
 
-            sendData(mtargetBeban,
-                     mperintahManual,
-                     mperintahAuto,
-                     mupdateData);
+                sendData(mtargetBeban,
+                         mperintahManual,
+                         mperintahAuto,
+                         mupdateData);
 
-            if (!mMsgTargeTercapai) {
-                qDebug() << "warningbox baru akan dicreate";
-                mMsgTargeTercapai = new msgtargetercapai(this);
-                connect(mMsgTargeTercapai, &msgtargetercapai::btnYesClicked, this, &MainWindow::on_btnMsgTargetercapai_clicked);
-                connect(mMsgTargeTercapai, &msgtargetercapai::btnResumeClicked, this, &MainWindow::on_btnMsgTargetTercapaiResume_clicked);
-                connect(mMsgTargeTercapai, &QObject::destroyed, [=]() mutable {
-                    qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
-                    mMsgTargeTercapai = nullptr; // Set pointer to nullptr
-                });
-                mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
-                mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+                if (!mMsgTargeTercapai) {
+                    qDebug() << "warningbox baru akan dicreate";
+                    mMsgTargeTercapai = new msgtargetercapai(this);
+                    connect(mMsgTargeTercapai, &msgtargetercapai::btnYesClicked, this, &MainWindow::on_btnMsgTargetercapai_clicked);
+                    connect(mMsgTargeTercapai, &msgtargetercapai::btnResumeClicked, this, &MainWindow::on_btnMsgTargetTercapaiResume_clicked);
+                    connect(mMsgTargeTercapai, &QObject::destroyed, [=]() mutable {
+                            qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
+                            mMsgTargeTercapai = nullptr; // Set pointer to nullptr
+                    });
+                    mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+                    mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
 
-                mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
-                mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
-                mMsgTargeTercapai->setWindowModality(Qt::ApplicationModal);
-                mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
-                mMsgTargeTercapai->show();
-            } else {
-                // Jika sudah ada, kirim notifikasi
-                qDebug() << "warningbox udah dicreate";
-                //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
-            }
+                    mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
+                    mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+                    mMsgTargeTercapai->setWindowModality(Qt::ApplicationModal);
+                    mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
+                    mMsgTargeTercapai->show();
+                } else {
+                   // Jika sudah ada, kirim notifikasi
+                   qDebug() << "warningbox udah dicreate";
+                   //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
+                }
 
-            modeEnd();
-            ui->labelBatasAtas->setStyleSheet(
-                "QLabel {"
-                "background-color: #D71920;"
-                "color: white;"
-                "font-size: 36px;"
-                "font-weight: bold;"
-                "font-family: Arial;"
+                modeEnd();
+                ui->labelBatasAtas->setStyleSheet(
+                     "QLabel {"
+                     "background-color: #D71920;"
+                     "color: white;"
+                     "font-size: 36px;"
+                     "font-weight: bold;"
+                     "font-family: Arial;"
                 "}"
-            );
+              );
             }
             break;
 
@@ -2893,6 +2927,7 @@ void MainWindow::processDataQueue()
         default:
             //ui->labelBatasAtas->setText("");
             //ui->labelBatasBawah->setText("");
+            qDebug() << "ls " << dataTerima.limitSwitch;
             ui->labelBatasAtas->setStyleSheet(
                 "QLabel {"
                 "background-color: #14A0F1;"
