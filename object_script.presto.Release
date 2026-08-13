@@ -4,9 +4,13 @@ INPUT(
 ./release\qcustomplot.o
 ./release\msglogout.o
 ./release\msgendukur.o
+./release\msgtargettercapai.o
+./release\msgisinamadulu.o
 ./release\qrc_img.o
 ./release\moc_mainwindow.o
 ./release\moc_qcustomplot.o
 ./release\moc_msglogout.o
 ./release\moc_msgendukur.o
+./release\moc_msgtargettercapai.o
+./release\moc_msgisinamadulu.o
 );

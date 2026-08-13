@@ -21,8 +21,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MainWindow_t {
-    QByteArrayData data[98];
-    char stringdata0[2068];
+    QByteArrayData data[101];
+    char stringdata0[2166];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -114,21 +114,24 @@ QT_MOC_LITERAL(79, 1675, 19), // "on_btnPause_clicked"
 QT_MOC_LITERAL(80, 1695, 18), // "on_btnSave_clicked"
 QT_MOC_LITERAL(81, 1714, 18), // "on_btnExit_clicked"
 QT_MOC_LITERAL(82, 1733, 31), // "on_btnAddNewMeasurement_clicked"
-QT_MOC_LITERAL(83, 1765, 20), // "horzScrollBarChanged"
-QT_MOC_LITERAL(84, 1786, 20), // "vertScrollBarChanged"
-QT_MOC_LITERAL(85, 1807, 12), // "xAxisChanged"
-QT_MOC_LITERAL(86, 1820, 8), // "QCPRange"
-QT_MOC_LITERAL(87, 1829, 5), // "range"
-QT_MOC_LITERAL(88, 1835, 12), // "yAxisChanged"
-QT_MOC_LITERAL(89, 1848, 21), // "horzScrollBar2Changed"
-QT_MOC_LITERAL(90, 1870, 21), // "vertScrollBar2Changed"
-QT_MOC_LITERAL(91, 1892, 13), // "xAxis2Changed"
-QT_MOC_LITERAL(92, 1906, 13), // "yAxis2Changed"
-QT_MOC_LITERAL(93, 1920, 25), // "onbtnYes_msgLogoutClicked"
-QT_MOC_LITERAL(94, 1946, 24), // "onbtnNo_msgLogoutClicked"
-QT_MOC_LITERAL(95, 1971, 26), // "onbtnYes_msgEndUkurClicked"
-QT_MOC_LITERAL(96, 1998, 25), // "onbtnNo_msgEndUkurClicked"
-QT_MOC_LITERAL(97, 2024, 43) // "on_serialPortInfoListBox_curr..."
+QT_MOC_LITERAL(83, 1765, 30), // "on_btnMsgTargetercapai_clicked"
+QT_MOC_LITERAL(84, 1796, 37), // "on_btnMsgTargetTercapaiResume..."
+QT_MOC_LITERAL(85, 1834, 28), // "on_btnMsgisinamadulu_clicked"
+QT_MOC_LITERAL(86, 1863, 20), // "horzScrollBarChanged"
+QT_MOC_LITERAL(87, 1884, 20), // "vertScrollBarChanged"
+QT_MOC_LITERAL(88, 1905, 12), // "xAxisChanged"
+QT_MOC_LITERAL(89, 1918, 8), // "QCPRange"
+QT_MOC_LITERAL(90, 1927, 5), // "range"
+QT_MOC_LITERAL(91, 1933, 12), // "yAxisChanged"
+QT_MOC_LITERAL(92, 1946, 21), // "horzScrollBar2Changed"
+QT_MOC_LITERAL(93, 1968, 21), // "vertScrollBar2Changed"
+QT_MOC_LITERAL(94, 1990, 13), // "xAxis2Changed"
+QT_MOC_LITERAL(95, 2004, 13), // "yAxis2Changed"
+QT_MOC_LITERAL(96, 2018, 25), // "onbtnYes_msgLogoutClicked"
+QT_MOC_LITERAL(97, 2044, 24), // "onbtnNo_msgLogoutClicked"
+QT_MOC_LITERAL(98, 2069, 26), // "onbtnYes_msgEndUkurClicked"
+QT_MOC_LITERAL(99, 2096, 25), // "onbtnNo_msgEndUkurClicked"
+QT_MOC_LITERAL(100, 2122, 43) // "on_serialPortInfoListBox_curr..."
 
     },
     "MainWindow\0serialDataParsed\0\0DataTerima\0"
@@ -182,6 +185,9 @@ QT_MOC_LITERAL(97, 2024, 43) // "on_serialPortInfoListBox_curr..."
     "on_btnOpen_clicked\0on_btnSelesai_clicked\0"
     "on_btnPause_clicked\0on_btnSave_clicked\0"
     "on_btnExit_clicked\0on_btnAddNewMeasurement_clicked\0"
+    "on_btnMsgTargetercapai_clicked\0"
+    "on_btnMsgTargetTercapaiResume_clicked\0"
+    "on_btnMsgisinamadulu_clicked\0"
     "horzScrollBarChanged\0vertScrollBarChanged\0"
     "xAxisChanged\0QCPRange\0range\0yAxisChanged\0"
     "horzScrollBar2Changed\0vertScrollBar2Changed\0"
@@ -200,7 +206,7 @@ static const uint qt_meta_data_MainWindow[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-      87,   14, // methods
+      90,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -208,95 +214,98 @@ static const uint qt_meta_data_MainWindow[] = {
        2,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    1,  449,    2, 0x06 /* Public */,
-       5,    0,  452,    2, 0x06 /* Public */,
+       1,    1,  464,    2, 0x06 /* Public */,
+       5,    0,  467,    2, 0x06 /* Public */,
 
  // slots: name, argc, parameters, tag, flags
-       6,    0,  453,    2, 0x08 /* Private */,
-       7,    0,  454,    2, 0x08 /* Private */,
-       8,    0,  455,    2, 0x08 /* Private */,
-       9,    0,  456,    2, 0x08 /* Private */,
-      10,    1,  457,    2, 0x08 /* Private */,
-      11,    0,  460,    2, 0x08 /* Private */,
-      12,    1,  461,    2, 0x08 /* Private */,
-      15,    1,  464,    2, 0x08 /* Private */,
-      17,    0,  467,    2, 0x08 /* Private */,
-      18,    0,  468,    2, 0x08 /* Private */,
-      19,    0,  469,    2, 0x08 /* Private */,
-      20,    0,  470,    2, 0x08 /* Private */,
-      21,    1,  471,    2, 0x08 /* Private */,
-      23,    1,  474,    2, 0x08 /* Private */,
-      25,    1,  477,    2, 0x08 /* Private */,
-      26,    0,  480,    2, 0x08 /* Private */,
-      27,    0,  481,    2, 0x08 /* Private */,
-      28,    0,  482,    2, 0x08 /* Private */,
-      29,    0,  483,    2, 0x08 /* Private */,
-      30,    0,  484,    2, 0x08 /* Private */,
-      31,    0,  485,    2, 0x08 /* Private */,
-      32,    0,  486,    2, 0x08 /* Private */,
-      33,    0,  487,    2, 0x08 /* Private */,
-      34,    0,  488,    2, 0x08 /* Private */,
-      35,    0,  489,    2, 0x08 /* Private */,
-      36,    0,  490,    2, 0x08 /* Private */,
-      37,    0,  491,    2, 0x08 /* Private */,
-      38,    0,  492,    2, 0x08 /* Private */,
-      39,    0,  493,    2, 0x08 /* Private */,
-      40,    0,  494,    2, 0x08 /* Private */,
-      41,    0,  495,    2, 0x08 /* Private */,
-      42,    0,  496,    2, 0x08 /* Private */,
-      43,    0,  497,    2, 0x08 /* Private */,
-      44,    0,  498,    2, 0x08 /* Private */,
-      45,    0,  499,    2, 0x08 /* Private */,
-      46,    0,  500,    2, 0x08 /* Private */,
-      47,    0,  501,    2, 0x08 /* Private */,
-      48,    0,  502,    2, 0x08 /* Private */,
-      49,    0,  503,    2, 0x08 /* Private */,
-      50,    0,  504,    2, 0x08 /* Private */,
-      51,    0,  505,    2, 0x08 /* Private */,
-      52,    0,  506,    2, 0x08 /* Private */,
-      53,    0,  507,    2, 0x08 /* Private */,
-      54,    0,  508,    2, 0x08 /* Private */,
-      55,    0,  509,    2, 0x08 /* Private */,
-      56,    0,  510,    2, 0x08 /* Private */,
-      57,    0,  511,    2, 0x08 /* Private */,
-      58,    0,  512,    2, 0x08 /* Private */,
-      59,    0,  513,    2, 0x08 /* Private */,
-      60,    0,  514,    2, 0x08 /* Private */,
-      61,    0,  515,    2, 0x08 /* Private */,
-      62,    0,  516,    2, 0x08 /* Private */,
-      63,    0,  517,    2, 0x08 /* Private */,
-      64,    0,  518,    2, 0x08 /* Private */,
-      65,    0,  519,    2, 0x08 /* Private */,
-      66,    0,  520,    2, 0x08 /* Private */,
-      67,    0,  521,    2, 0x08 /* Private */,
-      68,    0,  522,    2, 0x08 /* Private */,
-      69,    0,  523,    2, 0x08 /* Private */,
-      70,    0,  524,    2, 0x08 /* Private */,
-      71,    0,  525,    2, 0x08 /* Private */,
-      72,    0,  526,    2, 0x08 /* Private */,
-      73,    0,  527,    2, 0x08 /* Private */,
-      74,    0,  528,    2, 0x08 /* Private */,
-      75,    0,  529,    2, 0x08 /* Private */,
-      76,    0,  530,    2, 0x08 /* Private */,
-      77,    0,  531,    2, 0x08 /* Private */,
-      78,    0,  532,    2, 0x08 /* Private */,
-      79,    0,  533,    2, 0x08 /* Private */,
-      80,    0,  534,    2, 0x08 /* Private */,
-      81,    0,  535,    2, 0x08 /* Private */,
-      82,    0,  536,    2, 0x08 /* Private */,
-      83,    1,  537,    2, 0x08 /* Private */,
-      84,    1,  540,    2, 0x08 /* Private */,
-      85,    1,  543,    2, 0x08 /* Private */,
-      88,    1,  546,    2, 0x08 /* Private */,
-      89,    1,  549,    2, 0x08 /* Private */,
-      90,    1,  552,    2, 0x08 /* Private */,
-      91,    1,  555,    2, 0x08 /* Private */,
-      92,    1,  558,    2, 0x08 /* Private */,
-      93,    0,  561,    2, 0x08 /* Private */,
-      94,    0,  562,    2, 0x08 /* Private */,
-      95,    0,  563,    2, 0x08 /* Private */,
-      96,    0,  564,    2, 0x08 /* Private */,
-      97,    1,  565,    2, 0x08 /* Private */,
+       6,    0,  468,    2, 0x08 /* Private */,
+       7,    0,  469,    2, 0x08 /* Private */,
+       8,    0,  470,    2, 0x08 /* Private */,
+       9,    0,  471,    2, 0x08 /* Private */,
+      10,    1,  472,    2, 0x08 /* Private */,
+      11,    0,  475,    2, 0x08 /* Private */,
+      12,    1,  476,    2, 0x08 /* Private */,
+      15,    1,  479,    2, 0x08 /* Private */,
+      17,    0,  482,    2, 0x08 /* Private */,
+      18,    0,  483,    2, 0x08 /* Private */,
+      19,    0,  484,    2, 0x08 /* Private */,
+      20,    0,  485,    2, 0x08 /* Private */,
+      21,    1,  486,    2, 0x08 /* Private */,
+      23,    1,  489,    2, 0x08 /* Private */,
+      25,    1,  492,    2, 0x08 /* Private */,
+      26,    0,  495,    2, 0x08 /* Private */,
+      27,    0,  496,    2, 0x08 /* Private */,
+      28,    0,  497,    2, 0x08 /* Private */,
+      29,    0,  498,    2, 0x08 /* Private */,
+      30,    0,  499,    2, 0x08 /* Private */,
+      31,    0,  500,    2, 0x08 /* Private */,
+      32,    0,  501,    2, 0x08 /* Private */,
+      33,    0,  502,    2, 0x08 /* Private */,
+      34,    0,  503,    2, 0x08 /* Private */,
+      35,    0,  504,    2, 0x08 /* Private */,
+      36,    0,  505,    2, 0x08 /* Private */,
+      37,    0,  506,    2, 0x08 /* Private */,
+      38,    0,  507,    2, 0x08 /* Private */,
+      39,    0,  508,    2, 0x08 /* Private */,
+      40,    0,  509,    2, 0x08 /* Private */,
+      41,    0,  510,    2, 0x08 /* Private */,
+      42,    0,  511,    2, 0x08 /* Private */,
+      43,    0,  512,    2, 0x08 /* Private */,
+      44,    0,  513,    2, 0x08 /* Private */,
+      45,    0,  514,    2, 0x08 /* Private */,
+      46,    0,  515,    2, 0x08 /* Private */,
+      47,    0,  516,    2, 0x08 /* Private */,
+      48,    0,  517,    2, 0x08 /* Private */,
+      49,    0,  518,    2, 0x08 /* Private */,
+      50,    0,  519,    2, 0x08 /* Private */,
+      51,    0,  520,    2, 0x08 /* Private */,
+      52,    0,  521,    2, 0x08 /* Private */,
+      53,    0,  522,    2, 0x08 /* Private */,
+      54,    0,  523,    2, 0x08 /* Private */,
+      55,    0,  524,    2, 0x08 /* Private */,
+      56,    0,  525,    2, 0x08 /* Private */,
+      57,    0,  526,    2, 0x08 /* Private */,
+      58,    0,  527,    2, 0x08 /* Private */,
+      59,    0,  528,    2, 0x08 /* Private */,
+      60,    0,  529,    2, 0x08 /* Private */,
+      61,    0,  530,    2, 0x08 /* Private */,
+      62,    0,  531,    2, 0x08 /* Private */,
+      63,    0,  532,    2, 0x08 /* Private */,
+      64,    0,  533,    2, 0x08 /* Private */,
+      65,    0,  534,    2, 0x08 /* Private */,
+      66,    0,  535,    2, 0x08 /* Private */,
+      67,    0,  536,    2, 0x08 /* Private */,
+      68,    0,  537,    2, 0x08 /* Private */,
+      69,    0,  538,    2, 0x08 /* Private */,
+      70,    0,  539,    2, 0x08 /* Private */,
+      71,    0,  540,    2, 0x08 /* Private */,
+      72,    0,  541,    2, 0x08 /* Private */,
+      73,    0,  542,    2, 0x08 /* Private */,
+      74,    0,  543,    2, 0x08 /* Private */,
+      75,    0,  544,    2, 0x08 /* Private */,
+      76,    0,  545,    2, 0x08 /* Private */,
+      77,    0,  546,    2, 0x08 /* Private */,
+      78,    0,  547,    2, 0x08 /* Private */,
+      79,    0,  548,    2, 0x08 /* Private */,
+      80,    0,  549,    2, 0x08 /* Private */,
+      81,    0,  550,    2, 0x08 /* Private */,
+      82,    0,  551,    2, 0x08 /* Private */,
+      83,    0,  552,    2, 0x08 /* Private */,
+      84,    0,  553,    2, 0x08 /* Private */,
+      85,    0,  554,    2, 0x08 /* Private */,
+      86,    1,  555,    2, 0x08 /* Private */,
+      87,    1,  558,    2, 0x08 /* Private */,
+      88,    1,  561,    2, 0x08 /* Private */,
+      91,    1,  564,    2, 0x08 /* Private */,
+      92,    1,  567,    2, 0x08 /* Private */,
+      93,    1,  570,    2, 0x08 /* Private */,
+      94,    1,  573,    2, 0x08 /* Private */,
+      95,    1,  576,    2, 0x08 /* Private */,
+      96,    0,  579,    2, 0x08 /* Private */,
+      97,    0,  580,    2, 0x08 /* Private */,
+      98,    0,  581,    2, 0x08 /* Private */,
+      99,    0,  582,    2, 0x08 /* Private */,
+     100,    1,  583,    2, 0x08 /* Private */,
 
  // signals: parameters
     QMetaType::Void, 0x80000000 | 3,    4,
@@ -375,14 +384,17 @@ static const uint qt_meta_data_MainWindow[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void, QMetaType::Int,   16,
     QMetaType::Void, QMetaType::Int,   16,
-    QMetaType::Void, 0x80000000 | 86,   87,
-    QMetaType::Void, 0x80000000 | 86,   87,
+    QMetaType::Void, 0x80000000 | 89,   90,
+    QMetaType::Void, 0x80000000 | 89,   90,
     QMetaType::Void, QMetaType::Int,   16,
     QMetaType::Void, QMetaType::Int,   16,
-    QMetaType::Void, 0x80000000 | 86,   87,
-    QMetaType::Void, 0x80000000 | 86,   87,
+    QMetaType::Void, 0x80000000 | 89,   90,
+    QMetaType::Void, 0x80000000 | 89,   90,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -474,19 +486,22 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 71: _t->on_btnSave_clicked(); break;
         case 72: _t->on_btnExit_clicked(); break;
         case 73: _t->on_btnAddNewMeasurement_clicked(); break;
-        case 74: _t->horzScrollBarChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 75: _t->vertScrollBarChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 76: _t->xAxisChanged((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
-        case 77: _t->yAxisChanged((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
-        case 78: _t->horzScrollBar2Changed((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 79: _t->vertScrollBar2Changed((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 80: _t->xAxis2Changed((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
-        case 81: _t->yAxis2Changed((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
-        case 82: _t->onbtnYes_msgLogoutClicked(); break;
-        case 83: _t->onbtnNo_msgLogoutClicked(); break;
-        case 84: _t->onbtnYes_msgEndUkurClicked(); break;
-        case 85: _t->onbtnNo_msgEndUkurClicked(); break;
-        case 86: _t->on_serialPortInfoListBox_currentTextChanged((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 74: _t->on_btnMsgTargetercapai_clicked(); break;
+        case 75: _t->on_btnMsgTargetTercapaiResume_clicked(); break;
+        case 76: _t->on_btnMsgisinamadulu_clicked(); break;
+        case 77: _t->horzScrollBarChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 78: _t->vertScrollBarChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 79: _t->xAxisChanged((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
+        case 80: _t->yAxisChanged((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
+        case 81: _t->horzScrollBar2Changed((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 82: _t->vertScrollBar2Changed((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 83: _t->xAxis2Changed((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
+        case 84: _t->yAxis2Changed((*reinterpret_cast< QCPRange(*)>(_a[1]))); break;
+        case 85: _t->onbtnYes_msgLogoutClicked(); break;
+        case 86: _t->onbtnNo_msgLogoutClicked(); break;
+        case 87: _t->onbtnYes_msgEndUkurClicked(); break;
+        case 88: _t->onbtnNo_msgEndUkurClicked(); break;
+        case 89: _t->on_serialPortInfoListBox_currentTextChanged((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -551,13 +566,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 87)
+        if (_id < 90)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 87;
+        _id -= 90;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 87)
+        if (_id < 90)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 87;
+        _id -= 90;
     }
     return _id;
 }

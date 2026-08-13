@@ -96,6 +96,7 @@ public:
     QLabel *labelJudul;
     QPushButton *btnExit;
     QLabel *logSerialTextEdit;
+    QLabel *logSerialTX;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -455,8 +456,14 @@ public:
 "border-radius: 30px;"));
         logSerialTextEdit = new QLabel(centralWidget);
         logSerialTextEdit->setObjectName(QStringLiteral("logSerialTextEdit"));
-        logSerialTextEdit->setGeometry(QRect(10, 970, 1411, 61));
+        logSerialTextEdit->setGeometry(QRect(720, 970, 700, 61));
         logSerialTextEdit->setStyleSheet(QLatin1String("background-color: rgb(247, 255, 237);\n"
+"font: 28pt \"MS Shell Dlg 2\";\n"
+"border-radius: 30px;"));
+        logSerialTX = new QLabel(centralWidget);
+        logSerialTX->setObjectName(QStringLiteral("logSerialTX"));
+        logSerialTX->setGeometry(QRect(10, 970, 700, 61));
+        logSerialTX->setStyleSheet(QLatin1String("background-color: rgb(247, 255, 237);\n"
 "font: 28pt \"MS Shell Dlg 2\";\n"
 "border-radius: 30px;"));
         MainWindow->setCentralWidget(centralWidget);
@@ -531,6 +538,7 @@ public:
         labelJudul->setText(QApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:48pt;\">MESIN UJI TEKAN</span></p></body></html>", nullptr));
         btnExit->setText(QString());
         logSerialTextEdit->setText(QApplication::translate("MainWindow", "000", nullptr));
+        logSerialTX->setText(QApplication::translate("MainWindow", "000", nullptr));
     } // retranslateUi
 
 };
