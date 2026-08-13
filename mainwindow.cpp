@@ -1386,7 +1386,7 @@ void MainWindow::setWidgetPosition()
     ui->page_4->resize(stackPageSize);
 
     // Baris log serial dibagi dua secara fleksibel:
-    // logSerialTX di kiri, logSerialTextEdit di kanan.
+    // logSerialTX di kiri, logSerialRX di kanan.
     // Lebar keduanya selalu mengikuti lebar area grafik (leftW).
     const int serialLogY = bodyY + stackH + gap;
     const int serialLogGap = gap;
@@ -1395,14 +1395,14 @@ void MainWindow::setWidgetPosition()
     const int serialRxW = serialLogUsableW - serialTxW;
 
     ui->logSerialTX->setMinimumSize(0, 0);
-    ui->logSerialTextEdit->setMinimumSize(0, 0);
+    ui->logSerialRX->setMinimumSize(0, 0);
 
     ui->logSerialTX->setGeometry(margin,
                                  serialLogY,
                                  serialTxW,
                                  logH);
 
-    ui->logSerialTextEdit->setGeometry(margin + serialTxW + serialLogGap,
+    ui->logSerialRX->setGeometry(margin + serialTxW + serialLogGap,
                                        serialLogY,
                                        serialRxW,
                                        logH);
@@ -1777,7 +1777,7 @@ void MainWindow::setWidgetPosition()
 
     // Log TX/RX dan judul/footer grafik
     fitFont(ui->logSerialTX,       ui->logSerialTX->text(),       37, 11, false, 0.98, 0.85);
-    fitFont(ui->logSerialTextEdit, ui->logSerialTextEdit->text(), 37, 11, false, 0.98, 0.85);
+    fitFont(ui->logSerialRX, ui->logSerialRX->text(), 37, 11, false, 0.98, 0.85);
     fitFont(ui->labelHeadmmGram, QStringLiteral("Displacement (mm) vs Load (gram)"), 16, 9);
     fitFont(ui->labelHeadTsGram, QStringLiteral("timeStamps vs Gram"),                 16, 9);
     fitFont(ui->labelmm,         QStringLiteral("Displacement mm"),                    14, 8);
@@ -2365,7 +2365,7 @@ void MainWindow::readData()
     qDebug() << "<rcv=" << data << ">";
     QString strData = QString::fromUtf8(data).trimmed();
 
-    ui->logSerialTextEdit->appendPlainText(strData);
+    ui->logSerialRX->appendPlainText(strData);
     // contoh: "0.000 kg;0.000 mm"
 
     // Split pakai ";"
@@ -2682,32 +2682,24 @@ void MainWindow::on_btnRefreshSerialPort_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnStop_clicked()
 {
-    //closeSerialPort();
-    //qDebug() << "CLOSED UART------------------------------------------";
-    //if(timerStopWatch->isActive()) timerStopWatch->stop();
-    //setQueueProcessingEnabled(false);
+    if (!m_serial || !m_serial->isOpen())
+        return;
 
-   // if(ui->teNama->toPlainText().isEmpty()){
-   //     QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-   //     return;
-   // }
+    // STOP hanya menghentikan motor manual.
+    // Consumer RX tetap aktif supaya data streaming tetap masuk,
+    // UI tetap update, dan grafik tetap diplot.
+    m_manualMovementActive = false;
+    setQueueProcessingEnabled(true);
 
-    if(m_serial && m_serial->isOpen()){
+    const float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+    const quint8 mperintahManual = 3; // stop
+    const quint8 mperintahAuto = 0;
+    const quint8 mupdateData = 0;
 
-       setQueueProcessingEnabled(false);
-
-       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-       quint8 mperintahManual = 3; //stop
-       quint8 mperintahAuto = 0;
-       quint8 mupdateData = 0;
-
-       sendData(mtargetBeban,
-                mperintahManual,
-                mperintahAuto,
-                mupdateData);
-    }else{
-
-    }
+    sendData(mtargetBeban,
+             mperintahManual,
+             mperintahAuto,
+             mupdateData);
 }
 
 /*****************************************************************************************************
@@ -2815,7 +2807,7 @@ void MainWindow::processDataQueue()
         if (strRcv.length() >= 5)
             strRcv.remove(0, 5); // buang dua byte header dari tampilan debug
 
-        ui->logSerialTextEdit->setText("RX:" + strRcv);
+        ui->logSerialRX->setText("RX:" + strRcv);
 
         //------------------------------------
         // Debug data hasil parsing
@@ -2849,7 +2841,19 @@ void MainWindow::processDataQueue()
         // Limit switch label.
         switch (dataTerima.limitSwitch) {
         case 0: // normal
+            // Limit atas sudah lepas. Izinkan kejadian limit atas berikutnya
+            // memunculkan dialog kembali.
+            m_limitAtasLatched = false;
+
             ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: rgb(143, 255, 248);"
+                "color: black;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}");
+            ui->labelBatasBawah->setStyleSheet(
                 "QLabel {"
                 "background-color: rgb(143, 255, 248);"
                 "color: black;"
@@ -2859,61 +2863,99 @@ void MainWindow::processDataQueue()
                 "}");
             break;
 
-        case 1: // atas             //ui->labelBatasAtas->setText(QString::number(dataTerima.bebanAktual));
-             {
-            qDebug() << "Atas sentuh";
-                timerStopWatch->stop();
-                setQueueProcessingEnabled(false);
+        case 1: // batas atas
+        {
+            // Label harus tetap merah selama limitSwitch masih 1.
+            ui->labelBatasAtas->setStyleSheet(
+                "QLabel {"
+                "background-color: #D71920;"
+                "color: white;"
+                "font-size: 36px;"
+                "font-weight: bold;"
+                "font-family: Arial;"
+                "}"
+            );
 
-                float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-                quint8 mperintahManual = 3; //stop
-                quint8 mperintahAuto = 0;
-                quint8 mupdateData = 0;
+            // Streaming RX -> queue -> label/log -> plot tetap aktif.
+            setQueueProcessingEnabled(true);
 
-                sendData(mtargetBeban,
-                         mperintahManual,
-                         mperintahAuto,
-                         mupdateData);
+            // Satu kondisi limit yang terus bernilai 1 hanya diproses sekali.
+            // Setelah dialog ditutup/dihapus, frame berikutnya dengan limitSwitch == 1
+            // tidak akan membuat msgtargettercapai muncul lagi.
+            if (!m_limitAtasLatched)
+            {
+                m_limitAtasLatched = true;
 
-                if (!mMsgTargeTercapai) {
-                    qDebug() << "warningbox baru akan dicreate";
-                    mMsgTargeTercapai = new msgtargetercapai(this);
-                    connect(mMsgTargeTercapai, &msgtargetercapai::btnYesClicked, this, &MainWindow::on_btnMsgTargetercapai_clicked);
-                    connect(mMsgTargeTercapai, &msgtargetercapai::btnResumeClicked, this, &MainWindow::on_btnMsgTargetTercapaiResume_clicked);
-                    connect(mMsgTargeTercapai, &QObject::destroyed, [=]() mutable {
-                            qDebug() << "mDATA Object destroyed. Pointer is now nullptr.";
-                            mMsgTargeTercapai = nullptr; // Set pointer to nullptr
-                    });
-                    mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
-                    mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+                qDebug() << "Atas sentuh - event pertama";
 
-                    mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);  // Mengatur window tanpa frame
-                    mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
-                    mMsgTargeTercapai->setWindowModality(Qt::ApplicationModal);
-                    mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
-                    mMsgTargeTercapai->show();
-                } else {
-                   // Jika sudah ada, kirim notifikasi
-                   qDebug() << "warningbox udah dicreate";
-                   //mMsgLogout->sendNotification("Notifikasi: Tombol ditekan lagi!" + QString::number(counterklik));
+                // Hanya stopwatch yang dihentikan.
+                if (timerStopWatch->isActive())
+                    timerStopWatch->stop();
+
+                m_manualMovementActive = false;
+
+                // Hentikan motor sekali saat limit pertama kali terdeteksi.
+                if (m_serial && m_serial->isOpen())
+                {
+                    const float mtargetBeban =
+                        ui->labelTargetBebanVal->text().toFloat();
+
+                    sendData(mtargetBeban,
+                             3, // manual STOP
+                             0,
+                             0);
                 }
 
-                modeEnd();
-                ui->labelBatasAtas->setStyleSheet(
-                     "QLabel {"
-                     "background-color: #D71920;"
-                     "color: white;"
-                     "font-size: 36px;"
-                     "font-weight: bold;"
-                     "font-family: Arial;"
-                "}"
-              );
-            }
-            break;
+                // Tampilkan dialog hanya sekali untuk satu kejadian limit atas.
+                if (!mMsgTargeTercapai)
+                {
+                    qDebug() << "warningbox baru akan dicreate";
 
-        case 2: // bawah
-            //ui->labelBatasBawah->setText(QString::number(dataTerima.bebanAktual));
-            ui->labelBatasAtas->setStyleSheet(
+                    mMsgTargeTercapai = new msgtargetercapai(this);
+
+                    connect(mMsgTargeTercapai,&msgtargetercapai::btnYesClicked,
+                            this,&MainWindow::on_btnMsgTargetercapai_clicked);
+
+                    connect(mMsgTargeTercapai,&msgtargetercapai::btnResumeClicked,
+                            this,&MainWindow::on_btnMsgTargetTercapaiResume_clicked);
+
+                    connect(mMsgTargeTercapai,&QObject::destroyed,
+                            [this]() {qDebug()<< "mMsgTargeTercapai destroyed. Pointer = nullptr";
+                                mMsgTargeTercapai = nullptr;
+                            });
+
+                    mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+                    mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+                    mMsgTargeTercapai->setWindowModality( Qt::ApplicationModal);
+                    mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
+                    mMsgTargeTercapai->show();
+                }
+            }
+
+            // PENTING:
+            // Jangan modeEnd() di sini.
+            // modeEnd() baru dilakukan saat tombol SELESAI pada
+            // msgtargettercapai diklik.
+            break;
+        }
+
+
+        case 2: // batas bawah
+            if (m_manualMovementActive) {
+                m_manualMovementActive = false;
+
+                // Jangan matikan consumer. Data setelah motor stop tetap masuk
+                // dan tetap diplot.
+                setQueueProcessingEnabled(true);
+
+                const float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+                sendData(mtargetBeban,
+                         3, // manual stop
+                         0,
+                         0);
+            }
+
+            ui->labelBatasBawah->setStyleSheet(
                 "QLabel {"
                 "background-color: #D71920;"
                 "color: white;"
@@ -3079,9 +3121,9 @@ void MainWindow::on_btnResetEncoder_clicked()
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
 ******************************************************************************************************/
-void MainWindow::on_logSerialTextEdit_textChanged()
+void MainWindow::on_logSerialRX_textChanged()
 {
-    QString text = ui->logSerialTextEdit->text();
+    QString text = ui->logSerialRX->text();
 
     /*
     // markers
@@ -3144,6 +3186,7 @@ void MainWindow::on_btnStart_clicked()
     m_rxBuffer.clear();
 
     startRcvUart = true;
+    m_manualMovementActive = false;
 
     logFilePath = logDir.filePath(ui->teNama->toPlainText() + ".csv");// + "_" + strTanggal + ".csv");
     qDebug() << "Path " << logFilePath;
@@ -3286,28 +3329,26 @@ void MainWindow::on_btnRefreshSerialPort_released()
 ******************************************************************************************************/
 void MainWindow::on_btnDown_clicked()
 {
-    //if(ui->teNama->toPlainText().isEmpty()){
-    //    QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-    //    return;
-    //}
+    if (!m_serial || !m_serial->isOpen())
+        return;
 
-    if(m_serial && m_serial->isOpen()){
-       //ui->btnStart->setVisible(true);
-       //ui->btnSelesai->setVisible(true);
-       //ui->btnPause->setVisible(false);
+    // Gerakan manual tidak mengubah mode UI menjadi modeResumed().
+    // modeResumed() men-disable btnDown/btnUp/btnStop dan tidak diperlukan
+    // untuk menjalankan streaming.
+    m_manualMovementActive = true;
 
-       setQueueProcessingEnabled(true);
+    // Pastikan consumer queue terus memproses frame RX selama motor bergerak.
+    setQueueProcessingEnabled(true);
 
-       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-       quint8 mperintahManual = 2; //turun
-       quint8 mperintahAuto = 0;
-       quint8 mupdateData = 0;
+    const float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+    const quint8 mperintahManual = 2; // turun
+    const quint8 mperintahAuto = 0;
+    const quint8 mupdateData = 0;
 
-       sendData(mtargetBeban,
-                mperintahManual,
-                mperintahAuto,
-                mupdateData);
-    }
+    sendData(mtargetBeban,
+             mperintahManual,
+             mperintahAuto,
+             mupdateData);
 }
 
 /*****************************************************************************************************
@@ -3317,28 +3358,25 @@ void MainWindow::on_btnDown_clicked()
 
 void MainWindow::on_btnUp_clicked()
 {
-    //if(ui->teNama->toPlainText().isEmpty()){
-    //    QMessageBox::warning(this,"Peringatan","isi nama file dulu");
-    //    return;
-    //}
+    if (!m_serial || !m_serial->isOpen())
+        return;
 
-    if(m_serial && m_serial->isOpen()){
-       //ui->btnStart->setVisible(true);
-       //ui->btnSelesai->setVisible(true);
-       //ui->btnPause->setVisible(false);
+    // Gerakan manual tidak mengubah mode UI menjadi modeResumed().
+    // Tombol STOP tetap bisa dipakai selama motor bergerak.
+    m_manualMovementActive = true;
 
-       setQueueProcessingEnabled(true);
+    // RX -> queue -> processDataQueue -> plot tetap berjalan.
+    setQueueProcessingEnabled(true);
 
-       float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-       quint8 mperintahManual = 1; //naik
-       quint8 mperintahAuto = 0;
-       quint8 mupdateData = 0;
+    const float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
+    const quint8 mperintahManual = 1; // naik
+    const quint8 mperintahAuto = 0;
+    const quint8 mupdateData = 0;
 
-       sendData(mtargetBeban,
-                mperintahManual,
-                mperintahAuto,
-                mupdateData);
-    }
+    sendData(mtargetBeban,
+             mperintahManual,
+             mperintahAuto,
+             mupdateData);
 }
 
 /*****************************************************************************************************
@@ -3961,6 +3999,18 @@ void MainWindow::on_btnAddNewMeasurement_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnMsgTargetercapai_clicked()
 {
+    // Tombol SELESAI pada msgtargettercapai.
+    // Masuk ke mode akhir, tetapi jangan hentikan consumer RX:
+    // log serial, label data dan plot tetap menerima streaming.
+    if (timerStopWatch->isActive())
+        timerStopWatch->stop();
+
+    m_manualMovementActive = false;
+    setQueueProcessingEnabled(true);
+
+    // m_limitAtasLatched sengaja TIDAK di-reset di sini.
+    // Selama limitSwitch masih 1, msgtargettercapai tidak akan muncul lagi.
+    // Latch baru di-reset oleh case 0 ketika limit fisik sudah lepas.
     modePaused();
 }
 

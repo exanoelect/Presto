@@ -127,7 +127,7 @@ private slots:
     void on_serialPortInfoListBox_activated(const QString &arg1);
     void on_btnTera_clicked();
     void on_btnResetEncoder_clicked();
-    void on_logSerialTextEdit_textChanged();
+    void on_logSerialRX_textChanged();
     void on_btnStart_clicked();
     void on_btnResume_clicked();
     void on_btnClearGraphmmGram_clicked();
@@ -219,6 +219,16 @@ private:
     QQueue<DataTerima> m_dataQueue;
     bool m_queueProcessingEnabled = false;
     bool m_queueProcessPending = false;
+
+    // True saat motor digerakkan manual dengan tombol UP/DOWN.
+    // RX/plot tetap aktif selama mode manual.
+    bool m_manualMovementActive = false;
+
+    // Latch satu kejadian limit atas.
+    // Selama limitSwitch tetap 1, dialog target tercapai hanya boleh muncul sekali.
+    // Latch di-reset setelah limitSwitch kembali 0.
+    bool m_limitAtasLatched = false;
+
     bool startRcvUart;
 
     // Batas memori untuk data real-time. Histori lengkap tetap ditulis ke CSV/log.

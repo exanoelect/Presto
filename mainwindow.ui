@@ -1158,7 +1158,7 @@ border-radius: 30px;</string>
      </property>
     </widget>
    </widget>
-   <widget class="QLabel" name="logSerialTextEdit">
+   <widget class="QLabel" name="logSerialRX">
     <property name="geometry">
      <rect>
       <x>720</x>
