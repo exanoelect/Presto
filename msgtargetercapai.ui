@@ -102,7 +102,7 @@ border-radius: 30px;</string>
 color:white;</string>
     </property>
     <property name="text">
-     <string>SELESAI</string>
+     <string>OK</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>

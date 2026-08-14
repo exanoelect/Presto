@@ -1812,6 +1812,7 @@ void MainWindow::setWidgetPosition()
     positionExitButton();
 }
 
+//---------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------
 // btnExit overlay: tidak memakai widthScreen dan tidak bergantung pada parent frame0.
