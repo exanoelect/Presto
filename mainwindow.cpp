@@ -1163,19 +1163,46 @@ void MainWindow::fillPortsInfo()
 //---------------------------------------------------------------------------------------
 void MainWindow::setWidgetPosition()
 {
-    if (!m_uiReady || !ui->centralWidget)
+    if (!ui || !ui->centralWidget)
         return;
 
     /*
-     * PENTING:
-     * Jangan gunakan widthScreen/heightScreen untuk menata child widget.
-     * Gunakan ukuran centralWidget yang BENAR-BENAR tersedia saat ini.
-     * Dengan demikian layout ikut berubah saat window di-maximize, restore,
-     * pindah monitor, atau resolusi desktop berubah.
+     * setWidgetPosition() dipanggil dari constructor sebelum showEvent().
+     * Pada versi sebelumnya m_uiReady belum pernah menjadi true, sehingga
+     * seluruh adaptive layout berhenti pada guard di awal fungsi.
+     *
+     * Karena diminta fokus hanya pada fungsi ini, state UI diaktifkan di sini.
+     * Setelah pemanggilan pertama, resizeEvent() dan showEvent() yang sudah ada
+     * otomatis dapat memanggil setWidgetPosition() lagi saat ukuran window berubah.
+     */
+    m_uiReady = true;
+
+    /*
+     * Sumber ukuran utama tetap centralWidget, bukan resolusi yang di-hardcode.
+     * Saat startup pertama, geometry dari Designer masih dapat membawa ukuran
+     * referensi 1920x1080 walaupun monitor lebih kecil. Karena itu ukuran layout
+     * juga dibatasi oleh availableGeometry monitor aktif.
      */
     const QRect area = ui->centralWidget->contentsRect();
-    const int W = area.width();
-    const int H = area.height();
+
+    int W = area.width();
+    int H = area.height();
+
+    QScreen *screen = nullptr;
+
+    if (windowHandle())
+        screen = windowHandle()->screen();
+
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+
+    if (screen)
+    {
+        const QSize availableSize = screen->availableGeometry().size();
+
+        W = qMin(W, availableSize.width());
+        H = qMin(H, availableSize.height());
+    }
 
     if (W < 640 || H < 480)
         return;
@@ -1186,13 +1213,33 @@ void MainWindow::setWidgetPosition()
                                      qMin(W / 1920.0, H / 1040.0),
                                      1.50);
 
+    // Boost KHUSUS layar besar.
+    // 1024x768 -> 1.0  : tampilan kecil tidak berubah.
+    // 1366x768 -> 1.0  : titik referensi mulai pembesaran.
+    // 1920x1080 -> 1.35: tanggal/jam jauh lebih proporsional.
+    const qreal largeScreenBoost = qBound<qreal>(
+        1.0,
+        qMin(W / 1366.0, H / 768.0),
+        1.35
+    );
+
     const int margin = qMax(6, qRound(10 * scale));
     const int gap    = qMax(6, qRound(10 * scale));
 
     // -------------------------------------------------------------------------
     // 1. HEADER
     // -------------------------------------------------------------------------
-    const int headerH = qBound(78, qRound(H * 0.115), 135);
+    // Pada layar kecil tinggi header tetap seperti sebelumnya.
+    // Pada layar besar beri ruang vertikal tambahan agar font tanggal/jam
+    // tidak dikecilkan lagi oleh fitFont().
+    const qreal headerBoost =
+        1.0 + (largeScreenBoost - 1.0) * 0.50;
+
+    const int headerH = qBound(
+        78,
+        qRound(H * 0.115 * headerBoost),
+        155
+    );
 
     ui->frame0->setGeometry(margin,
                             0,
@@ -1218,46 +1265,138 @@ void MainWindow::setWidgetPosition()
     // oleh frame0 pada resolusi kecil. Posisi visualnya tetap berada di
     // sudut kanan frame0.
     // ---------------------------------------------------------------------
-    const int exitSize = qBound(38,
-                                qRound(buttonH * 0.68),
-                                qMin(68, buttonH));
+    // ---------------------------------------------------------------------
+    // HEADER KANAN:
+    //   [ labelCurrentDate / labelCurrentClock ] [ btnExit ]
+    //
+    // btnExit berada di pojok kanan atas frame0.
+    // Date/Clock berhenti SEBELUM kolom Exit, sehingga tidak pernah overlap.
+    // ---------------------------------------------------------------------
+    const int exitSize = qBound(
+        42,
+        qRound(buttonH * 0.68),
+        qMin(72, buttonH)
+    );
 
-    // Koordinat lokal di frame0 diperlukan untuk menghitung ruang tanggal/jam.
-    const int exitXInFrame = ui->frame0->width() - headPad - exitSize;
-    const int exitYInFrame = (headerH - exitSize) / 2;
+    // btnExit adalah child centralWidget, jadi geometry aktualnya akan
+    // diposisikan oleh positionExitButton(). Di sini kita hitung posisi
+    // LOKAL terhadap frame0 sebagai batas layout Date/Clock.
+    const int exitXInFrame =
+        ui->frame0->width() - headPad - exitSize;
+
+    const int exitYInFrame = headPad;
 
     Q_UNUSED(exitYInFrame);
 
-    // Geometry btnExit tidak lagi ditentukan dalam koordinat frame0.
-    // positionExitButton() akan menguncinya langsung ke MainWindow setelah
-    // seluruh geometry header selesai dihitung.
+    // Progress pembesaran layar besar: 0.0 ... 1.0
+    const qreal largeProgress =
+        qBound<qreal>(
+            0.0,
+            (largeScreenBoost - 1.0) / 0.35,
+            1.0
+        );
 
-    // Blok tanggal/jam (child frame0) berhenti sebelum posisi lokal btnExit.
-    const int clockBlockW = qBound(190,
-                                   qRound(ui->frame0->width() * 0.20),
-                                   360);
-    const int clockX = qMax(ui->btnSave->geometry().right() + 2 * gap,
-                            exitXInFrame - gap - clockBlockW);
-    const int actualClockW = qMax(80, exitXInFrame - gap - clockX);
-    const int dateH  = qMax(24, qRound((headerH - 2 * headPad) * 0.34));
+    // Area tanggal/jam tetap di sisi kanan frame0, tepat di kiri btnExit.
+    // Lebar bertambah pada resolusi besar tetapi tidak pernah melewati
+    // area tengah/judul.
+    const qreal clockWidthRatio =
+        0.25 + (0.05 * largeProgress);
 
-    ui->labelCurrentDate->setGeometry(clockX,
-                                      headPad,
-                                      actualClockW,
-                                      dateH);
+    const int desiredClockW = qBound(
+        250,
+        qRound(ui->frame0->width() * clockWidthRatio),
+        560
+    );
 
-    ui->labelCurrentClock->setGeometry(clockX,
-                                       headPad + dateH,
-                                       actualClockW,
-                                       headerH - 2 * headPad - dateH);
+    const int clockRight =
+        exitXInFrame - gap;
 
-    const int titleX = ui->btnSave->geometry().right() + gap;
-    const int titleW = qMax(50, clockX - gap - titleX);
+    const int minClockX =
+        ui->frame0->width() / 2 + qMax(20, gap);
 
-    ui->labelJudul->setGeometry(titleX,
-                                0,
-                                titleW,
-                                headerH);
+    const int clockX =
+        qMax(minClockX,
+             clockRight - desiredClockW);
+
+    const int actualClockW =
+        qMax(180,
+             clockRight - clockX);
+
+    const int clockContentH =
+        qMax(1, headerH - 2 * headPad);
+
+    const int dateH = qMax(
+        30,
+        qRound(clockContentH * 0.38)
+    );
+
+    const int timeH = qMax(
+        36,
+        clockContentH - dateH
+    );
+
+    ui->labelCurrentDate->setGeometry(
+        clockX,
+        headPad,
+        actualClockW,
+        dateH
+    );
+
+    ui->labelCurrentClock->setGeometry(
+        clockX,
+        headPad + dateH,
+        actualClockW,
+        timeH
+    );
+
+    ui->labelCurrentDate->setAlignment(
+        Qt::AlignRight | Qt::AlignVCenter
+    );
+
+    ui->labelCurrentClock->setAlignment(
+        Qt::AlignRight | Qt::AlignVCenter
+    );
+
+    // ---------------------------------------------------------------------
+    // JUDUL:
+    // Pusat geometrinya tetap di pusat frame0, tetapi lebarnya dibatasi
+    // supaya sisi kanan berhenti SEBELUM clockX dan sisi kiri tidak
+    // menabrak btnSave.
+    // ---------------------------------------------------------------------
+    const int frameCenterX =
+        ui->frame0->width() / 2;
+
+    const int titleLeftLimit =
+        ui->btnSave->geometry().right() + 2 * gap;
+
+    const int titleRightLimit =
+        clockX - 2 * gap;
+
+    const int leftRoom =
+        qMax(0, frameCenterX - titleLeftLimit);
+
+    const int rightRoom =
+        qMax(0, titleRightLimit - frameCenterX);
+
+    const int titleHalfW =
+        qMax(120, qMin(leftRoom, rightRoom));
+
+    const int titleW =
+        qMax(240, 2 * titleHalfW);
+
+    const int titleX =
+        frameCenterX - titleW / 2;
+
+    ui->labelJudul->setGeometry(
+        titleX,
+        0,
+        titleW,
+        headerH
+    );
+
+    ui->labelJudul->setAlignment(
+        Qt::AlignCenter
+    );
 
     // -------------------------------------------------------------------------
     // 2. EMPAT PANEL RINGKAS DI BARIS ATAS
@@ -1747,8 +1886,34 @@ void MainWindow::setWidgetPosition()
 
     // Header
     fitFont(ui->labelJudul,       QStringLiteral("MESIN UJI TEKAN"), 64, 24, false);
-    fitFont(ui->labelCurrentDate, ui->labelCurrentDate->text(),       30, 12, false, 0.98);
-    fitFont(ui->labelCurrentClock,ui->labelCurrentClock->text(),      48, 16, false, 0.98);
+
+    // Khusus tanggal/jam:
+    // base font mendapat largeScreenBoost, jadi layar kecil tetap seperti
+    // sebelumnya sementara 1920x1080 membesar sampai sekitar 35%.
+    //
+    // Gunakan sample worst-case supaya ukuran tidak bergantung pada teks
+    // yang kebetulan sedang tampil saat setWidgetPosition() dipanggil.
+    const int dateBasePx =
+        qRound(42 * largeScreenBoost);
+
+    const int clockBasePx =
+        qRound(62 * largeScreenBoost);
+
+    fitFont(ui->labelCurrentDate,
+            QStringLiteral("Rabu, 30 September 2026"),
+            dateBasePx,
+            18,
+            false,
+            0.99,
+            0.96);
+
+    fitFont(ui->labelCurrentClock,
+            QStringLiteral("23:59:59 WIB"),
+            clockBasePx,
+            24,
+            false,
+            0.99,
+            0.96);
 
     // Empat panel ringkas
     fitFont(ui->labelTargetBebanKG,  QStringLiteral("Target Beban (kg)"), 43, 15);
@@ -1756,11 +1921,32 @@ void MainWindow::setWidgetPosition()
     fitFont(ui->labelDisplacementmm, QStringLiteral("Displacement (mm)"), 43, 14);
     fitFont(ui->labelWaktuClock,     QStringLiteral("Waktu"),             43, 15);
 
+    ui->labelLoadValue->setTextFormat(Qt::PlainText);
+    ui->labelDisplacementValue->setTextFormat(Qt::PlainText);
+
+    if (ui->labelLoadValue->text().contains(QStringLiteral("<html"),Qt::CaseInsensitive)) {
+        ui->labelLoadValue->setText(QStringLiteral("0.0000"));}
+
+    if (ui->labelDisplacementValue->text().contains(QStringLiteral("<html"),Qt::CaseInsensitive)){
+        ui->labelDisplacementValue->setText(QStringLiteral("0.0000"));
+    }
+
+    ui->labelTargetBebanVal->setAlignment(Qt::AlignCenter);
+    ui->labelLoadValue->setAlignment(Qt::AlignCenter);
+    ui->labelDisplacementValue->setAlignment(Qt::AlignCenter);
+
     fitFont(ui->labelTargetBebanVal, ui->labelTargetBebanVal->text(), 64, 20, false, 0.90, 0.82);
     fitFont(ui->labelLoadValue,      ui->labelLoadValue->text(),      64, 20, false, 0.92, 0.82);
     fitFont(ui->labelDisplacementValue,
             ui->labelDisplacementValue->text(),                       64, 20, false, 0.92, 0.82);
-    fitFont(ui->labelStopWatch,      QStringLiteral("00:00.00"),      64, 20, false, 0.94, 0.82);
+
+    ui->labelStopWatch->setTextFormat(Qt::PlainText);
+    if (ui->labelStopWatch->text().contains(QStringLiteral("<html"),Qt::CaseInsensitive)){
+        ui->labelStopWatch->setText(QStringLiteral("00:00.00"));
+    }
+
+    //fitFont(ui->labelStopWatch, QStringLiteral("99:59.99"),58, 14, false, 0.94, 0.78);
+    fitFont(ui->labelStopWatch, QStringLiteral("00:00.00"),64, 20, false, 0.94, 0.82);
 
     // Panel kanan
     fitFont(ui->labelNama,      QStringLiteral("NAMA PENGUJIAN"), 32, 12, false);
@@ -1768,14 +1954,45 @@ void MainWindow::setWidgetPosition()
     fitFont(ui->labelLoadStr_8, QStringLiteral("TURUN"),           24, 10, false);
     fitFont(ui->labelLoadStr_4, QStringLiteral("MANUAL"),          37, 11, false);
     fitFont(ui->labelLoadStr_9, QStringLiteral("NAIK"),            24, 10, false);
-    fitFont(ui->labelBatasAtas,  QStringLiteral("BATAS ATAS"),     48, 14, true);
-    fitFont(ui->labelBatasBawah, QStringLiteral("BATAS BAWAH"),    48, 14, true);
+    // Label limit harus benar-benar mengikuti ukuran panel/resolusi.
+    // Layar kecil akan mengecil, layar besar tetap proporsional.
+
+    ui->labelBatasAtas->setTextFormat(Qt::PlainText);
+    ui->labelBatasBawah->setTextFormat(Qt::PlainText);
+
+    ui->labelBatasAtas->setText(QStringLiteral("BATAS ATAS"));
+    ui->labelBatasBawah->setText(QStringLiteral("BATAS BAWAH"));
+
+    fitFont(ui->labelBatasAtas,
+            QStringLiteral("BATAS ATAS"),
+            42, 10, true, 0.94, 0.80);
+
+    fitFont(ui->labelBatasBawah,
+            QStringLiteral("BATAS BAWAH"),
+            42, 10, true, 0.94, 0.80);
+
+    /*
+    fitFont(ui->labelBatasAtas,
+            QStringLiteral("BATAS ATAS"),
+            42, 11, true, 0.94, 0.82);
+
+    fitFont(ui->labelBatasBawah,
+            QStringLiteral("BATAS BAWAH"),
+            42, 11, true, 0.94, 0.82);
+            */
+
     fitFont(ui->serialPortInfoListBox,
             ui->serialPortInfoListBox->currentText().isEmpty()
                 ? QStringLiteral("COM99")
                 : ui->serialPortInfoListBox->currentText(),         48, 13, false, 0.90, 0.80);
 
     // Log TX/RX dan judul/footer grafik
+    ui->logSerialTX->setTextFormat(Qt::PlainText);
+    ui->logSerialRX->setTextFormat(Qt::PlainText);
+
+    ui->logSerialTX->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    ui->logSerialRX->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
     fitFont(ui->logSerialTX,       ui->logSerialTX->text(),       37, 11, false, 0.98, 0.85);
     fitFont(ui->logSerialRX, ui->logSerialRX->text(), 37, 11, false, 0.98, 0.85);
     fitFont(ui->labelHeadmmGram, QStringLiteral("Displacement (mm) vs Load (gram)"), 16, 9);
@@ -1812,74 +2029,80 @@ void MainWindow::setWidgetPosition()
     positionExitButton();
 }
 
-//---------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------
 // btnExit overlay: tidak memakai widthScreen dan tidak bergantung pada parent frame0.
 //---------------------------------------------------------------------------------------
 void MainWindow::positionExitButton()
 {
-    if (!m_uiReady || !ui || !ui->btnExit || !ui->centralWidget)
+    if (!m_uiReady || !ui || !ui->btnExit ||
+        !ui->centralWidget || !ui->frame0)
         return;
 
-    // btnExit adalah child centralWidget. Ambil area centralWidget yang benar-benar
-    // berada pada monitor aktif. Ini tetap benar apabila MainWindow/Designer masih
-    // membawa ukuran 1920x1080 sementara monitor hanya 1366x768.
-    QRect visible = ui->centralWidget->rect();
+    /*
+     * btnExit adalah child centralWidget, sedangkan posisi yang diinginkan
+     * adalah pojok kanan atas frame0.
+     *
+     * Karena parent berbeda, konversi titik lokal frame0 ke centralWidget
+     * dengan mapTo().
+     */
+    const int frameH =
+        qMax(1, ui->frame0->height());
 
-    QScreen *screen = nullptr;
-    if (windowHandle())
-        screen = windowHandle()->screen();
-    if (!screen)
-        screen = QGuiApplication::primaryScreen();
+    const qreal scale = qBound<qreal>(
+        0.55,
+        qMin(ui->centralWidget->width()  / 1920.0,
+             ui->centralWidget->height() / 1080.0),
+        1.50
+    );
 
-    if (screen) {
-        const QRect sg = screen->availableGeometry(); // global coordinates
-        const QPoint tl = ui->centralWidget->mapFromGlobal(sg.topLeft());
-        const QPoint br = ui->centralWidget->mapFromGlobal(sg.bottomRight());
-        QRect screenInCentral(tl, br);
-        screenInCentral = screenInCentral.normalized();
-        visible = visible.intersected(screenInCentral);
-    }
+    const int pad =
+        qMax(6, qRound(10 * scale));
 
-    // Fallback apabila mapping monitor belum valid saat startup.
-    if (!visible.isValid() || visible.width() < 80 || visible.height() < 80)
-        visible = ui->centralWidget->rect();
+    const int size = qBound(
+        42,
+        qRound(frameH * 0.58),
+        72
+    );
 
-    const int frameH = qMax(1, ui->frame0->height());
-    const qreal scale = qBound<qreal>(0.55,
-                                     qMin(visible.width() / 1920.0,
-                                          visible.height() / 1080.0),
-                                     1.50);
+    // Titik pojok kanan atas DI DALAM frame0.
+    const QPoint localTopLeft(
+        ui->frame0->width() - pad - size,
+        pad
+    );
 
-    const int pad  = qMax(6, qRound(10 * scale));
-    const int size = qBound(42, qRound(frameH * 0.58), 68);
-
-    // Kunci ke pojok kanan area monitor yang TERLIHAT, bukan ke widthScreen
-    // maupun lebar desain 1920 px.
-    int x = visible.right() - pad - size + 1;
-
-    // Secara vertikal tetap berada di tengah header.
-    int y = ui->frame0->y() + (frameH - size) / 2;
-
-    x = qBound(visible.left() + pad,
-               x,
-               qMax(visible.left() + pad, visible.right() - pad - size + 1));
-    y = qBound(visible.top() + pad,
-               y,
-               qMax(visible.top() + pad, visible.bottom() - pad - size + 1));
+    const QPoint topLeft =
+        ui->frame0->mapTo(
+            ui->centralWidget,
+            localTopLeft
+        );
 
     ui->btnExit->setMinimumSize(0, 0);
-    ui->btnExit->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-    ui->btnExit->setGeometry(x, y, size, size);
+    ui->btnExit->setMaximumSize(
+        QWIDGETSIZE_MAX,
+        QWIDGETSIZE_MAX
+    );
 
-    // Tidak memakai border-image/resource sama sekali: selalu ada tombol merah X.
+    ui->btnExit->setGeometry(
+        topLeft.x(),
+        topLeft.y(),
+        size,
+        size
+    );
+
     ui->btnExit->setIcon(QIcon());
-    ui->btnExit->setText(QStringLiteral("X"));
+    ui->btnExit->setText(
+        QStringLiteral("X")
+    );
 
-    QFont f = ui->btnExit->font();
+    QFont f =
+        ui->btnExit->font();
+
     f.setBold(true);
-    f.setPixelSize(qMax(18, qRound(size * 0.48)));
+    f.setPixelSize(
+        qMax(18, qRound(size * 0.48))
+    );
+
     ui->btnExit->setFont(f);
 
     const QString style = QStringLiteral(
@@ -1905,16 +2128,10 @@ void MainWindow::positionExitButton()
 
     ui->btnExit->setStyleSheet(style);
 
-    // Paksa tetap ada di atas semua sibling centralWidget.
     ui->btnExit->show();
     ui->btnExit->raise();
-
-    qDebug() << "btnExit visible=" << ui->btnExit->isVisible()
-             << "enabled=" << ui->btnExit->isEnabled()
-             << "geometry=" << ui->btnExit->geometry()
-             << "visibleArea=" << visible
-             << "central=" << ui->centralWidget->rect();
 }
+
 
 
 //---------------------------------------------------------------------------------------

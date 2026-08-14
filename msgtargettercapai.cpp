@@ -6,6 +6,8 @@ msgtargetercapai::msgtargetercapai(QWidget *parent) :
     ui(new Ui::msgtargetercapai)
 {
     ui->setupUi(this);
+    ui->btnResume->setVisible(false);
+    ui->label_5->setVisible(false);
 }
 
 msgtargetercapai::~msgtargetercapai()
