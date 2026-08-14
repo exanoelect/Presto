@@ -44,7 +44,7 @@ public:
         centralwidget->setObjectName(QStringLiteral("centralwidget"));
         btnYes = new QPushButton(centralwidget);
         btnYes->setObjectName(QStringLiteral("btnYes"));
-        btnYes->setGeometry(QRect(290, 70, 191, 181));
+        btnYes->setGeometry(QRect(170, 70, 191, 181));
         btnYes->setStyleSheet(QLatin1String("background:none;\n"
 "border:none;\n"
 ""));
@@ -66,14 +66,14 @@ public:
 "border-radius: 30px;"));
         label_4 = new QLabel(centralwidget);
         label_4->setObjectName(QStringLiteral("label_4"));
-        label_4->setGeometry(QRect(290, 260, 181, 41));
+        label_4->setGeometry(QRect(170, 260, 181, 41));
         label_4->setLayoutDirection(Qt::LeftToRight);
         label_4->setStyleSheet(QLatin1String("font: 75 32pt \"Roboto Black\";\n"
 "color:white;"));
         label_4->setAlignment(Qt::AlignCenter);
         btnResume = new QPushButton(centralwidget);
         btnResume->setObjectName(QStringLiteral("btnResume"));
-        btnResume->setGeometry(QRect(0, 40, 241, 241));
+        btnResume->setGeometry(QRect(40, 120, 61, 91));
         btnResume->setStyleSheet(QStringLiteral("border:none;"));
         QIcon icon1;
         icon1.addFile(QStringLiteral(":/resume1.png"), QSize(), QIcon::Normal, QIcon::Off);
@@ -81,7 +81,7 @@ public:
         btnResume->setIconSize(QSize(175, 175));
         label_5 = new QLabel(centralwidget);
         label_5->setObjectName(QStringLiteral("label_5"));
-        label_5->setGeometry(QRect(40, 260, 181, 41));
+        label_5->setGeometry(QRect(40, 260, 41, 41));
         label_5->setLayoutDirection(Qt::LeftToRight);
         label_5->setStyleSheet(QLatin1String("font: 75 32pt \"Roboto Black\";\n"
 "color:white;"));
@@ -112,7 +112,7 @@ public:
         btnYes->setText(QString());
         label->setText(QApplication::translate("msgtargetercapai", "TARGET TERCAPAI", nullptr));
         label_2->setText(QString());
-        label_4->setText(QApplication::translate("msgtargetercapai", "SELESAI", nullptr));
+        label_4->setText(QApplication::translate("msgtargetercapai", "OK", nullptr));
         btnResume->setText(QString());
         label_5->setText(QApplication::translate("msgtargetercapai", "RESUME", nullptr));
     } // retranslateUi
