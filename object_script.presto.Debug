@@ -6,6 +6,7 @@ INPUT(
 ./debug\msgendukur.o
 ./debug\msgtargettercapai.o
 ./debug\msgisinamadulu.o
+./debug\msgmaxlimit.o
 ./debug\qrc_img.o
 ./debug\moc_mainwindow.o
 ./debug\moc_qcustomplot.o
@@ -13,4 +14,5 @@ INPUT(
 ./debug\moc_msgendukur.o
 ./debug\moc_msgtargettercapai.o
 ./debug\moc_msgisinamadulu.o
+./debug\moc_msgmaxlimit.o
 );

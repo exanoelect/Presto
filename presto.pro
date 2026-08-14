@@ -31,7 +31,8 @@ SOURCES += \
     msglogout.cpp \
     msgendukur.cpp \
     msgtargettercapai.cpp \
-    msgisinamadulu.cpp
+    msgisinamadulu.cpp \
+    msgmaxlimit.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,14 +40,17 @@ HEADERS += \
     msglogout.h \
     msgendukur.h \
     msgtargettercapai.h \
-    msgisinamadulu.h
+    msgisinamadulu.h \
+    msgmaxlimit.h
 
 FORMS += \
         mainwindow.ui \
     msglogout.ui \
     msgendukur.ui \
     msgtargetercapai.ui \
-    msgisinamadulu.ui
+    msgisinamadulu.ui \
+    msgmaxlimit.ui \
+    msgmaxlimit.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

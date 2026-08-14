@@ -2930,6 +2930,29 @@ void MainWindow::on_btnStop_clicked()
 ******************************************************************************************************/
 void MainWindow::on_btnResume_clicked()
 {
+    if(dataTerima.limitSwitch == 1){
+        if (!mMsgmaxlimit){
+            qDebug() << "mMsgTargeTercapai dibuat karena AUTO selesai";
+
+            mMsgmaxlimit = new msgmaxlimit(this);
+
+            connect(mMsgmaxlimit,&msgmaxlimit::btnYesClicked,
+                    this,&MainWindow::onbtnYes_msgMaxLimit);
+
+            connect(mMsgmaxlimit,&QObject::destroyed,
+                    [this]() {qDebug() << "mMsgTargeTercapai destroyed. Pointer = nullptr";
+                        mMsgmaxlimit = nullptr;
+                    });
+
+            mMsgmaxlimit->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+            mMsgmaxlimit->setAttribute(Qt::WA_TranslucentBackground);
+            mMsgmaxlimit->setWindowModality(Qt::ApplicationModal);
+            mMsgmaxlimit->setAttribute(Qt::WA_DeleteOnClose);
+            mMsgmaxlimit->show();
+        }
+        return;
+    }
+
     if(!timerStopWatch->isActive()) timerStopWatch->start(10);
     setQueueProcessingEnabled(true);
 
@@ -2937,37 +2960,6 @@ void MainWindow::on_btnResume_clicked()
     // Tetap tunggu autoFlag == true dari Arduino sebelum false dianggap selesai.
     m_autoMeasurementWasActive = false;
     m_autoCompletionHandled = false;
-
-    //-----------------
-    /*
-    modeRunning();
-    QTimer::singleShot(2000, this, [this](){
-          qDebug() << "Startn";
-          //ui->labelTargetBebanVal->setText(QString::number(mtargetBeban));
-          //setupRealtimeDataDemo(ui->plotmmgram);
-          //setupRealtimeDataDemoTs(ui->plottsgram);
-
-          testRunning = true;
-          elapsedTimer.start();      // mulai stopwatch
-
-          //elapsedTimer.restart();
-          if(!timerStopWatch->isActive()) timerStopWatch->start(10);
-          setQueueProcessingEnabled(true);
-
-          float mtargetBeban = ui->labelTargetBebanVal->text().toFloat();
-          quint8 mperintahManual = 0;
-          quint8 mperintahAuto = 1;
-          quint8 mupdateData = 1;
-
-          sendData(mtargetBeban,
-                   mperintahManual,
-                   mperintahAuto,
-                   mupdateData);
-         });
-     }
-     */
-
-    //-----------------
 
     if(m_serial && m_serial->isOpen()){
        modeResumed();
@@ -3101,31 +3093,21 @@ void MainWindow::processDataQueue()
 
                 mMsgTargeTercapai = new msgtargetercapai(this);
 
-                connect(mMsgTargeTercapai,
-                        &msgtargetercapai::btnYesClicked,
-                        this,
-                        &MainWindow::on_btnMsgTargetercapai_clicked);
+                connect(mMsgTargeTercapai,&msgtargetercapai::btnYesClicked,
+                        this,&MainWindow::on_btnMsgTargetercapai_clicked);
 
-                connect(mMsgTargeTercapai,
-                        &msgtargetercapai::btnResumeClicked,
-                        this,
-                        &MainWindow::on_btnMsgTargetTercapaiResume_clicked);
+                connect(mMsgTargeTercapai,&msgtargetercapai::btnResumeClicked,
+                        this,&MainWindow::on_btnMsgTargetTercapaiResume_clicked);
 
-                connect(mMsgTargeTercapai,
-                        &QObject::destroyed,
-                        [this]() {
-                            qDebug() << "mMsgTargeTercapai destroyed. Pointer = nullptr";
+                connect(mMsgTargeTercapai,&QObject::destroyed,
+                        [this]() {qDebug() << "mMsgTargeTercapai destroyed. Pointer = nullptr";
                             mMsgTargeTercapai = nullptr;
                         });
 
-                mMsgTargeTercapai->setWindowFlags(
-                    Qt::Dialog | Qt::FramelessWindowHint);
-                mMsgTargeTercapai->setAttribute(
-                    Qt::WA_TranslucentBackground);
-                mMsgTargeTercapai->setWindowModality(
-                    Qt::ApplicationModal);
-                mMsgTargeTercapai->setAttribute(
-                    Qt::WA_DeleteOnClose);
+                mMsgTargeTercapai->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+                mMsgTargeTercapai->setAttribute(Qt::WA_TranslucentBackground);
+                mMsgTargeTercapai->setWindowModality(Qt::ApplicationModal);
+                mMsgTargeTercapai->setAttribute(Qt::WA_DeleteOnClose);
                 mMsgTargeTercapai->show();
             }
         }
@@ -3570,6 +3552,29 @@ void MainWindow::on_btnRefreshSerialPort_released()
 ******************************************************************************************************/
 void MainWindow::on_btnDown_clicked()
 {
+    if(dataTerima.limitSwitch == 2){ //limit bawah tercapai
+        if (!mMsgmaxlimit){
+            qDebug() << "mMsgTargeTercapai dibuat karena AUTO selesai";
+
+            mMsgmaxlimit = new msgmaxlimit(this);
+
+            connect(mMsgmaxlimit,&msgmaxlimit::btnYesClicked,
+                    this,&MainWindow::onbtnYes_msgMaxLimit);
+
+            connect(mMsgmaxlimit,&QObject::destroyed,
+                    [this]() {qDebug() << "mMsgTargeTercapai destroyed. Pointer = nullptr";
+                        mMsgmaxlimit = nullptr;
+                    });
+
+            mMsgmaxlimit->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+            mMsgmaxlimit->setAttribute(Qt::WA_TranslucentBackground);
+            mMsgmaxlimit->setWindowModality(Qt::ApplicationModal);
+            mMsgmaxlimit->setAttribute(Qt::WA_DeleteOnClose);
+            mMsgmaxlimit->show();
+        }
+        return;
+    }
+
     if (!m_serial || !m_serial->isOpen())
         return;
 
@@ -3599,6 +3604,29 @@ void MainWindow::on_btnDown_clicked()
 
 void MainWindow::on_btnUp_clicked()
 {
+    if(dataTerima.limitSwitch == 1){
+        if (!mMsgmaxlimit){
+            qDebug() << "mMsgTargeTercapai dibuat karena AUTO selesai";
+
+            mMsgmaxlimit = new msgmaxlimit(this);
+
+            connect(mMsgmaxlimit,&msgmaxlimit::btnYesClicked,
+                    this,&MainWindow::onbtnYes_msgMaxLimit);
+
+            connect(mMsgmaxlimit,&QObject::destroyed,
+                    [this]() {qDebug() << "mMsgTargeTercapai destroyed. Pointer = nullptr";
+                        mMsgmaxlimit = nullptr;
+                    });
+
+            mMsgmaxlimit->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+            mMsgmaxlimit->setAttribute(Qt::WA_TranslucentBackground);
+            mMsgmaxlimit->setWindowModality(Qt::ApplicationModal);
+            mMsgmaxlimit->setAttribute(Qt::WA_DeleteOnClose);
+            mMsgmaxlimit->show();
+        }
+        return;
+    }
+
     if (!m_serial || !m_serial->isOpen())
         return;
 
@@ -4407,6 +4435,12 @@ void MainWindow::onbtnYes_msgEndUkurClicked()
 void MainWindow::onbtnNo_msgEndUkurClicked()
 {
     modePaused();
+}
+
+//------------------------------------------------------------------------------------
+void MainWindow::onbtnYes_msgMaxLimit()
+{
+
 }
 
 //------------------------------------------------------------------------------------

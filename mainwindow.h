@@ -39,6 +39,7 @@
 #include <QMetaType>
 #include <msgtargettercapai.h>
 #include <msgisinamadulu.h>
+#include <msgmaxlimit.h>
 
 //color label batas atas bawah background-color: #14A0F1;
 
@@ -206,6 +207,8 @@ private slots:
     void onbtnYes_msgEndUkurClicked();
     void onbtnNo_msgEndUkurClicked();
 
+    void onbtnYes_msgMaxLimit();
+
     void on_serialPortInfoListBox_currentTextChanged(const QString &arg1);
 
 private:
@@ -320,6 +323,7 @@ private:
     msgendukur *mMsgEndUkur = nullptr;
     msgtargetercapai *mMsgTargeTercapai = nullptr;
     msgisinamadulu *mMsgisinamadulu = nullptr;
+    msgmaxlimit *mMsgmaxlimit = nullptr;
 };
 
 #endif // MAINWINDOW_H
