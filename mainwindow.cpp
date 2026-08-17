@@ -265,16 +265,6 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
     // Batasi jumlah point di RAM
     //--------------------------------------------------
 
-    if (m_mmCurve->dataCount() > MAX_MM_PLOT_POINTS)
-    {
-        const double firstSequenceToKeep =
-            m_mmCurveSequence
-            - static_cast<double>(MAX_MM_PLOT_POINTS)
-            + 1.0;
-
-        m_mmCurve->data()->removeBefore(firstSequenceToKeep);
-    }
-
     //--------------------------------------------------
     // Label axis
     //--------------------------------------------------
@@ -387,7 +377,6 @@ void MainWindow::clearGraph()
 void MainWindow::loadCsvToPlot(const QString &fileName)
 {
 
-
     //Entry data
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -444,7 +433,6 @@ void MainWindow::loadCsvToPlot(const QString &fileName)
     qDebug() << "plottsgram graphs =" << ui->plottsgram->graphCount();
     qDebug() << "plotmmgram graphs =" << ui->plotmmgram->graphCount();
 
-
     // x = displacement, y = Massa aka load
     ui->plottsgram->addGraph();
     ui->plottsgram->graph(0)->setPen(QPen(Qt::cyan,2));
@@ -477,8 +465,6 @@ void MainWindow::loadCsvToPlot(const QString &fileName)
 
     ui->plotmmgram->replot();
     qDebug() << "340";
-
-
 
 }
 
@@ -872,7 +858,6 @@ void MainWindow::modeRunning()
     ui->btnStop->setStyleSheet("QPushButton {""border-image: url(:/stop5.png);""}");
     ui->btnExit->setStyleSheet("QPushButton {""border-image: url(:/exit6.png);""}");
     ui->btnOpen->setStyleSheet("QPushButton {""border-image: url(:/open4.png);""}");
-
 
     ui->btnAddNewMeasurement->setStyleSheet("QPushButton {""border-image: url(:/add4.png);""}");
 }
@@ -2029,7 +2014,6 @@ void MainWindow::setWidgetPosition()
     positionExitButton();
 }
 
-
 //---------------------------------------------------------------------------------------
 // btnExit overlay: tidak memakai widthScreen dan tidak bergantung pada parent frame0.
 //---------------------------------------------------------------------------------------
@@ -2132,8 +2116,6 @@ void MainWindow::positionExitButton()
     ui->btnExit->raise();
 }
 
-
-
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -2182,8 +2164,6 @@ bool MainWindow::parsePacket(const QByteArray &packet, DataTerima &parsedData) c
     unpackFlag(p[9], parsedData);
 
     qDebug() << "up " << parsedData.autoFlag;
-
-
 
     qDebug() << "RAW =" << packet.toHex(' ').toUpper();
     //qDebug() << "p[8] LIMIT =" << static_cast<int>(p[8]);
@@ -2420,7 +2400,6 @@ void MainWindow::showEvent(QShowEvent *event)
     });
 }
 
-
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
@@ -2612,7 +2591,6 @@ void MainWindow::readData()
         writeLog(massa + ";" + displacement);
         qDebug() << "Writing logs---------------------------------------------------------------";
 
-
         ui->labelLoadValue->setText(massa);
         ui->labelLoadValue->setStyleSheet("QLabel { background-color: black; color: red; font-size: 32pt; }");
 
@@ -2785,7 +2763,6 @@ void MainWindow::realtimeDataSlot(double value)
     const double key =
         (currentTimeMs - startTimeMs) / 1000.0;
 
-
     //--------------------------------------------------
     // Pastikan graph tersedia
     //--------------------------------------------------
@@ -2803,7 +2780,6 @@ void MainWindow::realtimeDataSlot(double value)
             ->setAutoSqueeze(false);
     }
 
-
     //--------------------------------------------------
     // Tambah data LANGSUNG ketika data queue diterima
     //--------------------------------------------------
@@ -2816,16 +2792,9 @@ void MainWindow::realtimeDataSlot(double value)
         value
     );
 
-
     //--------------------------------------------------
     // Batasi histori data di RAM
     //--------------------------------------------------
-
-    graph->data()->removeBefore(
-        qMax(0.0,
-             key - TS_HISTORY_SECONDS)
-    );
-
 
     //--------------------------------------------------
     // Label axis
@@ -2833,7 +2802,6 @@ void MainWindow::realtimeDataSlot(double value)
 
     ui->plottsgram->xAxis->setLabel("Time (s)");
     ui->plottsgram->yAxis->setLabel("Load (kg)");
-
 
     //--------------------------------------------------
     // X axis
@@ -2857,7 +2825,6 @@ void MainWindow::realtimeDataSlot(double value)
             key
         );
     }
-
 
     //--------------------------------------------------
     // Plot LANGSUNG
@@ -3043,7 +3010,6 @@ void MainWindow::processDataQueue()
         qDebug() << "Auto Flag    :" << dataTerima.autoFlag;
         */
 
-
         // Plot langsung dari data hasil parsing. Tidak ada lagi QVector histori
         // yang terus membesar dan tidak ada copy seluruh data pada setiap sample.
         appendLoadDisplacementPoint(dataTerima.perpindahan,dataTerima.bebanAktual);
@@ -3056,7 +3022,6 @@ void MainWindow::processDataQueue()
         // Update nilai pada UI.
         ui->labelLoadValue->setText(QString::number(dataTerima.bebanAktual));
         ui->labelDisplacementValue->setText(QString::number(dataTerima.perpindahan));
-
 
         // -------------------------------------------------------------
         // DETEKSI PENGUKURAN AUTO SELESAI
@@ -3261,8 +3226,6 @@ void MainWindow::on_serialPortInfoListBox_activated(const QString &arg1)
     //ui->btnStart->setEnabled(true);
 }
 
-
-
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
@@ -3304,8 +3267,6 @@ void MainWindow::on_btnTera_clicked()
 
    ui->labelBatasAtas->setText("BATAS ATAS");
 }
-
-
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
@@ -3384,8 +3345,6 @@ void MainWindow::on_logSerialRX_textChanged()
     // now extracted contains the substring
     qDebug() << "Extracted block:\n" << extracted;
 }
-
-
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
@@ -3498,7 +3457,6 @@ void MainWindow::on_btnClearGraphtsgram_clicked()
     dataTerima = DataTerima{};
     m_rxBuffer.clear();
 }
-
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
@@ -3851,8 +3809,6 @@ void MainWindow::on_btnSave_pressed()
     );
 }
 
-
-
 void MainWindow::on_btnSave_released()
 {
     ui->btnSave->setStyleSheet(
@@ -4108,7 +4064,6 @@ void MainWindow::on_btnSelesai_clicked()
     */
 }
 
-
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
 **--------------------------------------------------------------------------------------------------**
@@ -4131,10 +4086,8 @@ void MainWindow::on_btnPause_clicked()
                 mperintahAuto,
                 mupdateData);
 
-
     }
 }
-
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**
@@ -4208,7 +4161,6 @@ void MainWindow::on_btnSave_clicked()
                              "Success",
                              "File succesfully saved");
 }
-
 
 /*****************************************************************************************************
 **--------------------------------------------------------------------------------------------------**

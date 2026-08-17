@@ -239,10 +239,7 @@ private:
 
     // Batas memori untuk data real-time. Histori lengkap tetap ditulis ke CSV/log.
     static constexpr int MAX_RX_QUEUE_SIZE = 2000;
-    static constexpr int MAX_MM_PLOT_POINTS = 10000;
-    static constexpr double TS_HISTORY_SECONDS = 10.0;
-
-    QCPCurve *m_mmCurve = nullptr;
+QCPCurve *m_mmCurve = nullptr;
     double m_mmCurveSequence = 0.0;
     double m_lastPlotDisplacement = 0.0;
     double m_lastPlotMass = 0.0;
