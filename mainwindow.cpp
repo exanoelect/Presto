@@ -242,9 +242,17 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
     {
         const double yMargin = 1.0;
 
-        // X SELALU dimulai dari 0
-        // Minimal range awal = 0 ... 5 mm
-        m_mmMaxX = qMax(0.1, displacement);
+        // X selalu dimulai dari 0
+        // Range awal selalu 0 ... 6 mm
+        m_mmMaxX = MAX_AXIS_INIT;
+
+        // Jika data pertama sudah lebih besar dari 6 mm,
+        // langsung sesuaikan dengan data tersebut.
+        if (displacement > m_mmMaxX)
+        {
+            const double xMargin = qMax(0.5, displacement * 0.1);
+            m_mmMaxX = displacement + xMargin;
+        }
 
         ui->plotmmgram->xAxis->setRange(
             0.0,
@@ -288,25 +296,20 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
 
     if (displacement > m_mmMaxX)
     {
-        // Tambahkan margin 10% supaya titik tidak menempel
-        // pada sisi kanan plot
-        const double xMargin =
-            qMax(0.5, m_mmMaxX * 0.1);
-
+        // Tambahkan margin 10% dari nilai displacement terbaru
+        // agar titik tidak menempel pada sisi kanan.
+        const double xMargin = qMax(0.5, displacement * 0.1);
         m_mmMaxX = displacement + xMargin;
 
         ui->plotmmgram->xAxis->setRange(
             0.0,
             m_mmMaxX
         );
-    }
-    else
-    {
-        // Pastikan lower axis tetap 0
-        QCPRange currentXRange =
-            ui->plotmmgram->xAxis->range();
+    }else{
+        // Pastikan sumbu X tetap dimulai dari 0.
+        QCPRange currentXRange = ui->plotmmgram->xAxis->range();
 
-        if (currentXRange.lower < 0.0)
+        if (currentXRange.lower != 0.0)
         {
             ui->plotmmgram->xAxis->setRange(
                 0.0,
@@ -369,6 +372,8 @@ void MainWindow::clearGraph()
     m_hasLastPlotPoint = false;
     m_lastPlotDisplacement = 0.0;
     m_lastPlotMass = 0.0;
+    m_mmMaxX = MAX_AXIS_INIT;
+    ui->plotmmgram->xAxis->setRange(0.0,MAX_AXIS_INIT);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2754,14 +2759,9 @@ void MainWindow::realtimeDataSlot(double value)
 
     static qint64 startTimeMs = -1;
 
-    if (startTimeMs < 0)
-        startTimeMs = QDateTime::currentMSecsSinceEpoch();
-
-    const qint64 currentTimeMs =
-        QDateTime::currentMSecsSinceEpoch();
-
-    const double key =
-        (currentTimeMs - startTimeMs) / 1000.0;
+    if (startTimeMs < 0) startTimeMs = QDateTime::currentMSecsSinceEpoch();
+    const qint64 currentTimeMs = QDateTime::currentMSecsSinceEpoch();
+    const double key =  (currentTimeMs - startTimeMs) / 1000.0;
 
     //--------------------------------------------------
     // Pastikan graph tersedia
@@ -2784,8 +2784,7 @@ void MainWindow::realtimeDataSlot(double value)
     // Tambah data LANGSUNG ketika data queue diterima
     //--------------------------------------------------
 
-    QCPGraph *graph =
-        ui->plottsgram->graph(0);
+    QCPGraph *graph = ui->plottsgram->graph(0);
 
     graph->addData(
         key,
@@ -2817,9 +2816,7 @@ void MainWindow::realtimeDataSlot(double value)
             0.0,
             DISPLAY_SECONDS
         );
-    }
-    else
-    {
+    }else{
         ui->plottsgram->xAxis->setRange(
             key - DISPLAY_SECONDS,
             key

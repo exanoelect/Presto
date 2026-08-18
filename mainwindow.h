@@ -43,6 +43,9 @@
 
 //color label batas atas bawah background-color: #14A0F1;
 
+//constexpr int MAX_AXIS_INIT  = 6.00
+//#define MAX_AXIS_INIT 6;
+
 #ifdef Q_OS_LINUX
     #define UART_PORT "ttyS0"  //"ttyUSB0" "COM5" "ttyUSB0"
 #endif
@@ -54,6 +57,8 @@
 #ifdef Q_OS_MAC
     #define UART_PORT "cu.usbserial-110" //"tty.usbserial-110" //"tty.usbserial-A50285BI" //"cu.usbserial-10" //"ttyS0"  //"ttyUSB0" "COM5" "ttyUSB0"
 #endif
+
+#define MAX_AXIS_INIT 6
 
 // Data hasil parsing satu frame serial.
 // Raw packet tetap disimpan untuk kebutuhan debug/log serial, sedangkan
@@ -315,7 +320,7 @@ QCPCurve *m_mmCurve = nullptr;
     void modeResumed();
     void modeEnd();
 
-    double m_mmMaxX = 100.0;
+    double m_mmMaxX = MAX_AXIS_INIT;
     msglogout *mMsgLogout =  nullptr;
     msgendukur *mMsgEndUkur = nullptr;
     msgtargetercapai *mMsgTargeTercapai = nullptr;
