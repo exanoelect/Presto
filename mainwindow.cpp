@@ -351,6 +351,22 @@ void MainWindow::appendLoadDisplacementPoint(double displacement, double mass)
     );
 }
 //---------------------------------------------------------------------------------------
+// State autoscroll/autoscale untuk plottsgram (realtimeDataSlot). Dijadikan
+// static file-scope (bukan anggota class) supaya bisa dipakai dari beberapa
+// fungsi di file ini (clearGraph, realtimeDataSlot, handler target tercapai)
+// tanpa perlu mengubah mainwindow.h.
+//
+// s_plotTsStartTimeMs : referensi waktu mulai (t=0) untuk sumbu X plottsgram.
+// s_plotTsFrozen      : ketika true, realtimeDataSlot() TIDAK menambah data
+//                        baru dan TIDAK mengubah range sumbu X plottsgram lagi
+//                        -> plot "diam" di kondisi terakhir. Diset true saat
+//                        target tercapai (autoFlag TRUE->FALSE), dan direset
+//                        false saat pengukuran baru dimulai / di-resume.
+//---------------------------------------------------------------------------------------
+static qint64 s_plotTsStartTimeMs = -1;
+static bool   s_plotTsFrozen      = false;
+
+//---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 void MainWindow::clearGraph()
@@ -374,6 +390,10 @@ void MainWindow::clearGraph()
     m_lastPlotMass = 0.0;
     m_mmMaxX = MAX_AXIS_INIT;
     ui->plotmmgram->xAxis->setRange(0.0,MAX_AXIS_INIT);
+
+    // Pengukuran baru dimulai: reset t=0 dan lepas status "diam" plottsgram.
+    s_plotTsStartTimeMs = -1;
+    s_plotTsFrozen      = false;
 }
 
 //---------------------------------------------------------------------------------------
@@ -2754,14 +2774,22 @@ void MainWindow::handleError(QSerialPort::SerialPortError error)
 void MainWindow::realtimeDataSlot(double value)
 {
     //--------------------------------------------------
+    // Target sudah tercapai -> plottsgram diam.
+    // Tidak menambah data baru maupun mengubah range sumbu X/Y.
+    // Plot akan tetap menampilkan kondisi terakhir sampai
+    // pengukuran baru dimulai (clearGraph()) atau di-resume.
+    //--------------------------------------------------
+
+    if (s_plotTsFrozen)
+        return;
+
+    //--------------------------------------------------
     // Timestamp awal
     //--------------------------------------------------
 
-    static qint64 startTimeMs = -1;
-
-    if (startTimeMs < 0) startTimeMs = QDateTime::currentMSecsSinceEpoch();
+    if (s_plotTsStartTimeMs < 0) s_plotTsStartTimeMs = QDateTime::currentMSecsSinceEpoch();
     const qint64 currentTimeMs = QDateTime::currentMSecsSinceEpoch();
-    const double key =  (currentTimeMs - startTimeMs) / 1000.0;
+    const double key =  (currentTimeMs - s_plotTsStartTimeMs) / 1000.0;
 
     //--------------------------------------------------
     // Pastikan graph tersedia
@@ -2804,24 +2832,33 @@ void MainWindow::realtimeDataSlot(double value)
 
     //--------------------------------------------------
     // X axis
-    // 0-8 detik pertama tidak pernah negatif.
-    // Setelah itu sliding window 8 detik.
+    // Plot TIDAK sliding/bergeser ke kiri. x=0 selalu tetap
+    // di posisi paling kiri. Semua data sejak awal pengukuran
+    // tetap ditampilkan; begitu waktu berjalan lebih lama dari
+    // DISPLAY_SECONDS_MIN, batas kanan axis ikut membesar
+    // mengikuti waktu terkini, sehingga skala sumbu X otomatis
+    // mengecil (zoom-out) agar seluruh data selalu muat.
     //--------------------------------------------------
 
-    constexpr double DISPLAY_SECONDS = 8.0;
+    constexpr double DISPLAY_SECONDS_MIN = 8.0; // lebar minimum axis di awal
 
-    if (key <= DISPLAY_SECONDS)
-    {
-        ui->plottsgram->xAxis->setRange(
-            0.0,
-            DISPLAY_SECONDS
-        );
-    }else{
-        ui->plottsgram->xAxis->setRange(
-            key - DISPLAY_SECONDS,
-            key
-        );
-    }
+    // NOTE: xAxis->setRange() di bawah ini akan memicu sinyal rangeChanged(),
+    // yang tersambung ke xAxisChanged() -> menggeser posisi horizontalScrollBar.
+    // Karena horizontalScrollBar hanya punya range -500..500 (lihat setupan di
+    // constructor / resetPlotView), nilai scrollbar bisa ter-clamp begitu axis
+    // sudah melebar jauh -> memicu horzScrollBarChanged() -> yang balik memaksa
+    // xAxis->setRange() ke posisi lama. Untuk update programatik (autoscale)
+    // di sini, kita blok sinyal xAxis sementara supaya tidak memicu feedback
+    // loop tsb. Scrollbar tetap bisa dipakai untuk pan/zoom manual saat plot
+    // di-pause / tidak menerima data baru.
+    ui->plottsgram->xAxis->blockSignals(true);
+
+    ui->plottsgram->xAxis->setRange(
+        0.0,
+        qMax(key, DISPLAY_SECONDS_MIN)
+    );
+
+    ui->plottsgram->xAxis->blockSignals(false);
 
     //--------------------------------------------------
     // Plot LANGSUNG
@@ -2924,6 +2961,10 @@ void MainWindow::on_btnResume_clicked()
     // Tetap tunggu autoFlag == true dari Arduino sebelum false dianggap selesai.
     m_autoMeasurementWasActive = false;
     m_autoCompletionHandled = false;
+
+    setQueueProcessingEnabled(true);
+    m_manualMovementActive = true;
+    s_plotTsFrozen = false;
 
     if(m_serial && m_serial->isOpen()){
        modeResumed();
@@ -3045,9 +3086,12 @@ void MainWindow::processDataQueue()
             if (timerStopWatch->isActive())
                 timerStopWatch->stop();
 
-            // Streaming RX / label / log / plot tetap aktif.
+            // Streaming RX / label / log tetap aktif, tapi plottsgram
+            // dibekukan (tidak menambah titik baru / tidak mengubah skala
+            // sumbu X lagi) karena target sudah tercapai.
             setQueueProcessingEnabled(true);
             m_manualMovementActive = false;
+            s_plotTsFrozen = true;
 
             if (!mMsgTargeTercapai)
             {
@@ -4240,6 +4284,10 @@ void MainWindow::on_btnMsgTargetTercapaiResume_clicked()
 {
     if(!timerStopWatch->isActive()) timerStopWatch->start(10);
     setQueueProcessingEnabled(true);
+
+    // Siklus AUTO dilanjutkan -> lepas status "diam" plottsgram supaya
+    // titik data baru mulai ditampilkan lagi.
+    s_plotTsFrozen = false;
 
     // Siapkan siklus AUTO berikutnya.
     m_autoMeasurementWasActive = false;
